@@ -1,0 +1,2 @@
+{"documentId":"synthetic-fr","subjectId":"demo-fr","language":"fr","split":"dev","catalogVersion":"synthetic-v1","text":"Python et outil interne","annotations":[{"start":0,"end":6,"skillId":"demo-python"},{"start":10,"end":23,"skillId":null}]}
+{"documentId":"synthetic-ar","subjectId":"demo-ar","language":"ar","split":"dev","catalogVersion":"synthetic-v1","text":"تحليل البيانات","annotations":[{"start":0,"end":14,"skillId":"demo-data-analysis"}]}

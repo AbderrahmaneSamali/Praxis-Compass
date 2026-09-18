@@ -1,0 +1,781 @@
+{
+  "archiveSha256": "49526f51ea5a26126c866e010c5552e1af084ed3eb5a53e1a3602bc06957d66d",
+  "version": "ESCO-1.2.0-fr-en-ar-labels",
+  "concepts": [
+    {
+      "uri": "http://data.europa.eu/esco/occupation/d3e32e5e-7f24-48e3-b939-e4f800eb62fb",
+      "type": "occupation",
+      "labels": {
+        "fr": "responsable des ressources humaines",
+        "ar": "مسؤول الموارد البشرية / مسؤولة الموارد البشرية",
+        "en": "human resources officer"
+      },
+      "alternatives": {
+        "en": [
+          "HR director",
+          "HR officer",
+          "HR rep",
+          "HR representative",
+          "HR supervisor",
+          "HR worker",
+          "competencies trainer",
+          "human resource officer",
+          "human resources director",
+          "human resources rep",
+          "human resources representative",
+          "human resources supervisor",
+          "human resources worker",
+          "lifelong learning coach",
+          "personnel administrator",
+          "personnel assistant",
+          "personnel development specialist",
+          "personnel director",
+          "personnel expert",
+          "personnel manager",
+          "personnel officer",
+          "personnel recruiter",
+          "personnel rep",
+          "personnel representative",
+          "personnel supervisor",
+          "personnel worker",
+          "skills trainer"
+        ],
+        "fr": [
+          "coordinateur des ressources humaines",
+          "coordinateur des ressources humaines/coordinatrice des ressources humaines",
+          "coordinatrice des ressources humaines",
+          "responsable du personnel"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/8d586ee9-0ab1-4155-a3b0-2ca786c8e48c",
+      "type": "occupation",
+      "labels": {
+        "fr": "analyste financier/analyste financière",
+        "ar": "محلل مالي / محللة مالية",
+        "en": "financial analyst"
+      },
+      "alternatives": {
+        "en": [
+          "banking analyst",
+          "capital markets analyst",
+          "company analyst",
+          "credit analyst",
+          "economic analyst",
+          "financial markets analyst",
+          "financial markets forecaster",
+          "financial markets report writer",
+          "financial markets researcher",
+          "financial markets specialist",
+          "financial researcher",
+          "m&a analyst",
+          "stock market analyst",
+          "structured finance analyst",
+          "treasury analyst"
+        ],
+        "fr": [
+          "analyste financier",
+          "analyste financière"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/719f101d-1866-49d3-8d5c-2256f606a8b9",
+      "type": "occupation",
+      "labels": {
+        "fr": "gestionnaire de la transformation numérique",
+        "ar": "مدير التحول الرقمي",
+        "en": "digital transformation manager"
+      },
+      "alternatives": {
+        "en": [
+          "digital transformation director",
+          "digital transformation officer"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/d3edb8f8-3a06-47a0-8fb9-9b212c006aa2",
+      "type": "occupation",
+      "labels": {
+        "fr": "analyste de données",
+        "ar": "محلل البيانات / محللة البيانات",
+        "en": "data analyst"
+      },
+      "alternatives": {
+        "fr": [
+          "analyste data",
+          "analystes de données",
+          "data analyst"
+        ],
+        "en": [
+          "business data analyst",
+          "data storage analyst",
+          "data warehouse analyst",
+          "data warehousing analyst"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/bea99fea-0383-4c63-b944-70d4799de2c5",
+      "type": "occupation",
+      "labels": {
+        "fr": "gestionnaire de projet",
+        "ar": "مدير مشروع",
+        "en": "project manager"
+      },
+      "alternatives": {
+        "fr": [
+          "cheffe de projet",
+          "responsable de projet"
+        ],
+        "en": [
+          "project coordinator",
+          "project director",
+          "project expediter",
+          "project leader",
+          "projects manager",
+          "senior project manager",
+          "special project manager"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/skill/286e486c-a094-4715-8e5b-a2370b09a408",
+      "type": "skill",
+      "labels": {
+        "fr": "gérer des mesures correctives",
+        "ar": "ادارة الإجراءات التصحيحية",
+        "en": "manage corrective actions"
+      },
+      "alternatives": {
+        "fr": [
+          "gérer des actions correctives"
+        ],
+        "en": [
+          "maintain corrective actions",
+          "manage corrective action",
+          "managing corrective actions",
+          "oversee corrective actions",
+          "regulate corrective actions",
+          "supervise corrective actions"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/skill/958b8802-ec3e-4813-97f7-6c8f48610dbd",
+      "type": "skill",
+      "labels": {
+        "en": "identify process improvements",
+        "fr": "identifier les améliorations des processus",
+        "ar": "تحديد تحسينات العملية"
+      },
+      "alternatives": {
+        "en": [
+          "compile improvement actions",
+          "determine improvement actions",
+          "develop improvement actions",
+          "find improvement opportunities",
+          "finding improvement opportunities",
+          "identification of process improvements",
+          "identify business improvement opportunities",
+          "identify improvement actions",
+          "identify improvement opportunities",
+          "identify process improvements",
+          "identifying business improvement opportunities",
+          "identifying improvement opportunities",
+          "identifying of process improvements",
+          "identifying process improvements",
+          "plan improvement actions",
+          "process improvement identification",
+          "process improvements identification",
+          "select improvement actions"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/skill/d83cba15-8511-4d07-b89a-9fde0d1d8241",
+      "type": "skill",
+      "labels": {
+        "fr": "effectuer des audits de la qualité",
+        "ar": "إجراء عمليات تدقيق الجودة",
+        "en": "perform quality audits"
+      },
+      "alternatives": {}
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/02eb0ae6-ecdd-4602-9c8e-60ffe6dbe1e2",
+      "type": "occupation",
+      "labels": {
+        "fr": "ingénieur de télécommunications/ingénieure de télécommunications",
+        "ar": "مهندس اتصالات / مهندسة اتصالات",
+        "en": "telecommunications engineer"
+      },
+      "alternatives": {
+        "fr": [
+          "ingénieur de télécommunications",
+          "ingénieur des systèmes de télécommunications",
+          "ingénieur en télécommunications",
+          "ingénieur télécom",
+          "ingénieure de télécommunications",
+          "ingénieure des systèmes de télécommunications",
+          "ingénieure en télécommunications",
+          "ingénieure telecom"
+        ],
+        "en": [
+          "broadcast engineer",
+          "communications designer",
+          "communications engineer",
+          "information systems engineer",
+          "radio engineer",
+          "telecom engineer",
+          "telecommunications designer",
+          "telecommunications engineers",
+          "telecommunications technologist",
+          "telecoms engineer",
+          "transmission engineer"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/0464b062-cea6-4164-b10d-956c61956ae7",
+      "type": "occupation",
+      "labels": {
+        "fr": "administrateur sécurité informatique/administratrice sécurité informatique",
+        "ar": "مسؤول أمن تكنولوجيا المعلومات والاتصالات / مسؤولة أمن تكنولوجيا المعلومات والاتصالات",
+        "en": "ICT security administrator"
+      },
+      "alternatives": {
+        "fr": [
+          "administrateur sécurité informatique",
+          "administratrice sécurité informatique",
+          "directeur de la sécurité TIC",
+          "directeur de la sécurité de la technologie de l'information et de la communication",
+          "directeur de la sécurité informatique",
+          "directrice de la sécurité TIC",
+          "directrice de la sécurité de la technologie de l'information et de la communication",
+          "directrice de la sécurité informatique",
+          "gestionnaire sécurité informatique",
+          "responsable de l'administration de sécurité informatique",
+          "responsable de la sécurité des TIC",
+          "responsable de la sécurité des technologies de l'information et de la communication"
+        ],
+        "en": [
+          "CISO",
+          "ICT security administrators",
+          "IT security administrator",
+          "information security administrator",
+          "network security administrator",
+          "system security administrator"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/106f79e4-6264-45f1-9e7a-297435cd684b",
+      "type": "occupation",
+      "labels": {
+        "fr": "testeur de logiciels/testeuse de logiciels",
+        "ar": "مختبر برمجيات / مختبرة برمجيات",
+        "en": "software tester"
+      },
+      "alternatives": {
+        "fr": [
+          "testeur d'applications",
+          "testeur de logiciels",
+          "testeur de logiciels d'application",
+          "testeuse d'applications",
+          "testeuse de logiciels",
+          "testeuse de logiciels d'application"
+        ],
+        "en": [
+          "application software tester",
+          "application tester",
+          "module tester",
+          "soft tester",
+          "software application tester",
+          "software testers",
+          "software testing specialist",
+          "tester",
+          "unit tester"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/207d7b18-6540-432e-8aa6-785ed434572f",
+      "type": "occupation",
+      "labels": {
+        "fr": "veilleur stratégique/veilleuse stratégique",
+        "ar": "مدير ذكاء الأعمال / مديرة ذكاء الأعمال",
+        "en": "business intelligence manager"
+      },
+      "alternatives": {
+        "fr": [
+          "expert en veille concurrentielle",
+          "expert en veille concurrentielle/experte en veille concurrentielle",
+          "expert en veille stratégique",
+          "expert en veille stratégique/experte en veille stratégique",
+          "experte en veille concurrentielle",
+          "experte en veille stratégique",
+          "veilleur stratégique",
+          "veilleuse stratégique"
+        ],
+        "en": [
+          "business intelligence analyst",
+          "business intelligence consultant",
+          "business intelligence specialist",
+          "business research analyst",
+          "business research consultant",
+          "competitive intelligence manager",
+          "market intelligence manager",
+          "research consultant",
+          "strategic business and intelligence manager"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/258e46f9-0075-4a2e-adae-1ff0477e0f30",
+      "type": "occupation",
+      "labels": {
+        "fr": "scientifique des données",
+        "ar": "عالم البيانات / عالمة البيانات",
+        "en": "data scientist"
+      },
+      "alternatives": {
+        "fr": [
+          "analyste scientifique des données",
+          "data scientist",
+          "expert en analyse des données",
+          "experte en analyse des données",
+          "scientifiques des données"
+        ],
+        "en": [
+          "data expert",
+          "data research scientist",
+          "research data scientist"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/2ed56c3f-61d6-4f7e-9ef8-8849eb102e4c",
+      "type": "occupation",
+      "labels": {
+        "fr": "développeur d’applications mobiles/développeuse d’applications mobiles",
+        "ar": "مطور تطبيقات الجوال / مطورة تطبيقات الجوال",
+        "en": "mobile application developer"
+      },
+      "alternatives": {
+        "fr": [
+          "concepteur d'applications mobiles",
+          "conceptrice d'applications mobiles",
+          "développeur d'applications mobiles",
+          "développeur d'applications pour dispositifs mobiles",
+          "développeur d'applications pour mobile",
+          "développeur d'applications pour portables",
+          "développeur mobile",
+          "développeuse d'applications mobiles",
+          "développeuse d'applications pour dispositifs mobiles",
+          "développeuse d'applications pour mobile",
+          "développeuse d'applications pour portables",
+          "développeuse mobile"
+        ],
+        "en": [
+          "app coder",
+          "app developer",
+          "app programmer",
+          "cell phone app developer",
+          "mobile app developer",
+          "mobile app specialist"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/2fb96c6c-8d0b-4ef0-b1ee-3e493305e4eb",
+      "type": "occupation",
+      "labels": {
+        "fr": "architecte en nuage",
+        "ar": "مهندس السحابة (الكلاود)",
+        "en": "cloud architect"
+      },
+      "alternatives": {
+        "en": [
+          "aws cloud architect",
+          "cloud solutions consultant"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/349ee6f6-c295-4c38-9b98-48765b55280e",
+      "type": "occupation",
+      "labels": {
+        "fr": "ingénieur en informatique en nuage/ingénieure en informatique en nuage",
+        "ar": "مهندس سحابي (كلاود)",
+        "en": "cloud engineer"
+      },
+      "alternatives": {
+        "fr": [
+          "architecte cloud",
+          "développeur cloud",
+          "développeuse cloud",
+          "ingénieur cloud devops",
+          "ingénieur cloud hybride",
+          "ingénieur cloud natif",
+          "ingénieur en cloud computing",
+          "ingénieur infrastructure cloud",
+          "ingénieur logiciel cloud",
+          "ingénieur réseau cloud",
+          "ingénieur solution cloud",
+          "ingénieur sécurité cloud",
+          "ingénieure cloud devops",
+          "ingénieure cloud hybride",
+          "ingénieure cloud natif",
+          "ingénieure en cloud computing",
+          "ingénieure infrastructure cloud",
+          "ingénieure logiciel cloud",
+          "ingénieure réseau cloud",
+          "ingénieure solution cloud",
+          "ingénieure sécurité cloud"
+        ],
+        "ar": [
+          "مطور السحابة",
+          "مطورة السحابة",
+          "مهندس الأمن السحابي",
+          "مهندس البنية التحتية السحابية",
+          "مهندس الحلول السحابية",
+          "مهندس الحوسبة السحابية",
+          "مهندس الشبكة السحابية",
+          "مهندس برمجيات سحابية",
+          "مهندس سحابة مختلطة",
+          "مهندس سحابي",
+          "مهندس سحابي أصلي",
+          "مهندس مطور السحابة",
+          "مهندسة الأمن السحابي",
+          "مهندسة البنية التحتية السحابية",
+          "مهندسة الحلول السحابية",
+          "مهندسة الحوسبة السحابية",
+          "مهندسة الشبكة السحابية",
+          "مهندسة برمجيات سحابية",
+          "مهندسة سحابة مختلطة",
+          "مهندسة سحابي",
+          "مهندسة سحابي أصلي",
+          "مهندسة مطورة السحابة"
+        ],
+        "en": [
+          "cloud computing engineer",
+          "cloud developer",
+          "cloud infrastructure engineer",
+          "cloud network engineer",
+          "cloud security engineer",
+          "cloud software engineer",
+          "cloud solution engineer",
+          "cloud-native engineer",
+          "hybrid cloud engineer"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/35553663-deab-4d9a-bf22-15c1625d28e8",
+      "type": "occupation",
+      "labels": {
+        "fr": "ingénieur en intelligence artificielle/ingénieure en intelligence artificielle",
+        "ar": "مهندس الذكاء الاصطناعي",
+        "en": " artificial intelligence engineer "
+      },
+      "alternatives": {
+        "fr": [
+          "concepteur de SI",
+          "concepteur de systèmes intelligents",
+          "conceptrice de SI",
+          "conceptrice de systèmes intelligents",
+          "designer de systèmes intelligents",
+          "ingénieur en intelligence artificielle",
+          "ingénieure en intelligence artificielle"
+        ],
+        "en": [
+          "AI system designer",
+          "ICT intelligent systems designer",
+          "artificial intelligence designer",
+          "designer of intelligent systems",
+          "intelligent system designer",
+          "intelligent systems designers",
+          "intelligent systems developer",
+          "intelligent systems engineer",
+          "linked data engineer",
+          "machine learning engineer",
+          "machine learning systems designer",
+          "semantic technologies engineer"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/7754d570-9519-48c2-b1c9-8e165f8bca0f",
+      "type": "occupation",
+      "labels": {
+        "fr": "gestionnaire des risques en cybersécurité",
+        "ar": "مدير مخاطر الأمن السيبراني",
+        "en": "cybersecurity risk manager"
+      },
+      "alternatives": {
+        "fr": [
+          "responsable de la sécurité TIC",
+          "responsable de la sécurité de la technologie de l'information et de la communication",
+          "responsable de la sécurité des TIC",
+          "responsable de la sécurité des technologies de l'information et de la communication"
+        ],
+        "en": [
+          "ICT security chief",
+          "ICT security manager",
+          "ICT technical security expert",
+          "IT security chief",
+          "IT security manager",
+          "cyber risk manager ",
+          "cybersecurity impact analyst ",
+          "cybersecurity risk assessor ",
+          "cybersecurity risk assurance consultant ",
+          "cybersecurity specialist",
+          "information security manager",
+          "information security risk analyst ",
+          "security coordinator"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/8b6388a4-4904-471b-9331-d3b1211f5525",
+      "type": "occupation",
+      "labels": {
+        "fr": "gestionnaire de projet informatique",
+        "ar": "مدير مشروع تكنولوجيا المعلومات والاتصالات / مديرة مشروع تكنولوجيا المعلومات والاتصالات",
+        "en": "ICT project manager"
+      },
+      "alternatives": {
+        "fr": [
+          "chef de projet informatique",
+          "cheffe de projet informatique",
+          "directeur de projet informatique",
+          "directrice de projet informatique",
+          "gestionnaire de projet TIC",
+          "gestionnaire de projet en technologies de l'information et de la communication",
+          "responsable de projet informatique"
+        ],
+        "en": [
+          "IT project manager",
+          "IT projects manager",
+          "blockchain manager",
+          "scrum master",
+          "web project manager"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/8c57af09-719c-42b3-be40-6ed4946236cc",
+      "type": "occupation",
+      "labels": {
+        "fr": "administrateur de base de données/administratrice de base de données",
+        "ar": "مسؤول قاعدة البيانات / مسؤولة قاعدة البيانات",
+        "en": "database administrator"
+      },
+      "alternatives": {
+        "fr": [
+          "administrateur de base de données",
+          "administrateur de bases de données",
+          "administrateur de données",
+          "administratrice de base de données",
+          "administratrice de bases de données",
+          "administratrice de données",
+          "gestionnaire de base de données",
+          "responsable des bases de données"
+        ],
+        "en": [
+          "DBA",
+          "data administrator",
+          "data base administrator",
+          "data base administrators",
+          "data manager",
+          "database administrators",
+          "database configurator",
+          "database manager"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/9e2e6e1e-363b-4e1b-a673-7bc0f7343300",
+      "type": "occupation",
+      "labels": {
+        "fr": "administrateur de systèmes informatiques/administratrice de systèmes informatiques",
+        "ar": "مدير نظم تكنولوجيا المعلومات والاتصالات / مديرة نظم تكنولوجيا المعلومات والاتصالات",
+        "en": "ICT system administrator"
+      },
+      "alternatives": {
+        "fr": [
+          "administrateur de systèmes TIC",
+          "administrateur de systèmes des technologies de l'information et de la communication",
+          "administrateur de systèmes informatiques",
+          "administrateur système",
+          "administrateur systèmes",
+          "administratrice de systèmes informatiques",
+          "administratrice système",
+          "administratrice systèmes"
+        ],
+        "en": [
+          "ICT sysadmin",
+          "ICT sysadmins",
+          "IT system administrator",
+          "IT systems administrator",
+          "enterprise administrator",
+          "network administrator",
+          "server administrator",
+          "sysadmin",
+          "system and network administrator",
+          "system and networks administrator"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/c40a2919-48a9-40ea-b506-1f34f693496d",
+      "type": "occupation",
+      "labels": {
+        "fr": "développeur web/développeuse web",
+        "ar": "مطور ويب / مطورة ويب",
+        "en": "web developer"
+      },
+      "alternatives": {
+        "fr": [
+          "concepteur web",
+          "conceptrice web",
+          "créateur de contenus web",
+          "créatrice de contenus web",
+          "développeur Internet",
+          "développeur web",
+          "développeuse Internet",
+          "développeuse web"
+        ],
+        "en": [
+          "web application developer",
+          "web developers",
+          "web engineer",
+          "web programmer",
+          "web specialist"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/cc867bee-ab5c-427f-9244-f7a204d9574b",
+      "type": "occupation",
+      "labels": {
+        "fr": "ingénieur DevOps en nuage/ingénieure DevOps en nuage",
+        "ar": "مهندس  Cloud DevOps",
+        "en": "cloud DevOps engineer "
+      },
+      "alternatives": {
+        "fr": [
+          "ingénieur DevOps en nuage",
+          "ingénieure DevOps en nuage"
+        ],
+        "en": [
+          "cloud automation engineer",
+          "cloud devops",
+          "cloud devops solution specialist",
+          "cloud infrastructure devops engineer",
+          "devops",
+          "devops administrator",
+          "devops analyst",
+          "devops architect",
+          "devops consultant",
+          "devops consultant engineer",
+          "devops engineer",
+          "devops specialist",
+          "site reliability devops engineer"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/cf2b03cd-feb7-4f47-90f6-ff1ed6016d3d",
+      "type": "occupation",
+      "labels": {
+        "fr": "ingénieur de réseaux informatiques/ingénieure de réseaux informatiques",
+        "ar": "المهندس المعماري لشبكات تكنولوجيا المعلومات والاتصالات / المهندسة المعمارية لشبكات تكنولوجيا المعلومات والاتصالات",
+        "en": "ICT network engineer"
+      },
+      "alternatives": {
+        "fr": [
+          "développeur de réseaux",
+          "ingénieur de réseaux",
+          "ingénieur réseau",
+          "ingénieur réseaux",
+          "ingénieure de réseaux",
+          "ingénieure réseau",
+          "ingénieure réseaux"
+        ],
+        "en": [
+          "network configurator",
+          "network developer",
+          "network engineers",
+          "networks designer",
+          "networks developer",
+          "networks engineer"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/f2b15a0e-e65a-438a-affb-29b9d50b77d1",
+      "type": "occupation",
+      "labels": {
+        "en": "software developer",
+        "fr": "développeur de logiciels/développeuse de logiciels",
+        "ar": "مطور برمجيات / مطورة برمجيات"
+      },
+      "alternatives": {
+        "fr": [
+          "concepteur d'applications",
+          "concepteur de logiciels",
+          "concepteur logiciel",
+          "conceptrice logiciel",
+          "développeur applications",
+          "développeur de logiciels",
+          "développeur de programmes",
+          "développeur logiciels",
+          "développeuse applications",
+          "développeuse de logiciels",
+          "développeuse logiciels"
+        ],
+        "en": [
+          "application developer",
+          "application programmer",
+          "application software developer",
+          "applications engineer",
+          "battery software developer",
+          "developer of software",
+          "programmer",
+          "soft developer",
+          "software developer",
+          "software developers",
+          "software engineer",
+          "software specialist",
+          "solutions developer"
+        ]
+      }
+    },
+    {
+      "uri": "http://data.europa.eu/esco/occupation/faed411a-f920-4100-86a8-b877928b429c",
+      "type": "occupation",
+      "labels": {
+        "fr": "analyste d’expérience utilisateur",
+        "ar": "محلل تجربة المستخدم / محللة تجربة المستخدم",
+        "en": "user experience analyst"
+      },
+      "alternatives": {
+        "fr": [
+          "analyste d'expérience d'utilisateur",
+          "analyste d'utilisabilité",
+          "analyste de l'expérience des utilisateurs",
+          "analyste expérience utilisateur"
+        ],
+        "en": [
+          "usability analyst",
+          "user experience analysts",
+          "user experience officer"
+        ]
+      }
+    }
+  ]
+}

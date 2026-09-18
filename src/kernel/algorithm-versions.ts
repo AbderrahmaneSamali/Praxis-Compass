@@ -1,0 +1,26 @@
+export const ALGORITHM_VERSIONS = Object.freeze({
+  itemVersion: 'navigator-item-v1',
+  adaptiveAssessment: 'navigator-adaptive-v2',
+  assessmentBlueprintEligibility: 'navigator-assessment-bank-eligibility-v1',
+  assessmentReconciliation: 'navigator-reconciliation-v1',
+  learnerEvidenceAdapter: 'praxis-learner-evidence-v1',
+  assessmentHandoff: 'praxis-assessment-handoff-v1',
+  outcomePriorEstimator: 'praxis-outcome-prior-v1',
+  escoTargetProfile: 'praxis-esco-target-profile-v3',
+  iscoSeniorityDerivation: 'praxis-isco-major-group-v1',
+  romeTransitionCrossDomain: 'praxis-rome-transition-cross-domain-v1',
+  escoRomeOccupationMatch: 'praxis-esco-rome-occupation-match-v1',
+  adaptiveDiagnosticSelection: 'praxis-adaptive-diagnostic-infogain-v3',
+  seniorityDirectionGuard: 'praxis-seniority-direction-guard-v1',
+  cvParserRules: 'navigator-cv-parser-rules-v0.1',
+  learnerContextCapture: 'praxis-learner-context-v3',
+  cvExperienceInference: 'praxis-cv-experience-inference-v1',
+  profileTargeting: 'navigator-profile-targeting-v0.1',
+  recommendationWeights: 'navigator-recommendation-weights-v1',
+  recommendationRanker: 'praxis-rank-reliable-v4',
+  priorityFormula: 'navigator-priority-v1',
+  pathwayBuilder: 'navigator-pathway-builder-v0.1',
+  reportTemplate: 'navigator-report-template-v0.1',
+});
+
+export type RegisteredAlgorithm = keyof typeof ALGORITHM_VERSIONS;

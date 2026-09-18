@@ -1,0 +1,31 @@
+{
+  "name": "@praxis/engine-standalone",
+  "version": "1.0.0",
+  "description": "Standalone PRAXIS Recommendation Engine & Career Compass",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --project tsconfig.check.json",
+    "test": "npm run build && node --test tests/*.test.mjs",
+    "test:db": "npm run build && node --test tests/postgres.integration.mjs",
+    "test:learner": "npm run build && node --test tests/learner.integration.mjs",
+    "learner": "npm run build && node learner/server.mjs",
+    "cv:benchmark": "node evaluation/cv-skills/run-pilot.mjs",
+    "demo": "tsx examples/demo-run.ts",
+    "migrate": "tsx database/migrate.ts",
+    "db:up": "docker compose -f docker-compose.db.yml up -d",
+    "db:down": "docker compose -f docker-compose.db.yml down"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.11.10",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
