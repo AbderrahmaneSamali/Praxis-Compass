@@ -1,6 +1,6 @@
 # Real local CV excerpt pilot
 
-Run `npm run cv:benchmark` from the project root. No model API, upload, or database is required. The command writes predictions for preferred-label and multilingual-alternative-label catalog matching, and `results.json` with separate development and test metrics.
+Run `npm run cv:benchmark` from the project root. No model API, upload, or database is required. The command builds the engine, writes predictions for preferred-label and multilingual-alternative-label matching through the versioned retrieve/rank decision contract, and writes `results.json` with separate development and test metrics.
 
 ## Data card
 
@@ -14,6 +14,6 @@ Run `npm run cv:benchmark` from the project root. No model API, upload, or datab
 
 ## Measured test results
 
-Four held-out excerpts contain 49 gold mentions. Preferred-label matching finds six exact spans from seven predictions (extraction F1 21.4%, end-to-end linking F1 14.3%). Expanded multilingual alternatives find ten exact spans from thirteen predictions (extraction F1 32.3%, end-to-end linking F1 22.6%). Expanded extraction recall is 20.4%. Neither dictionary baseline explicitly extracts NIL mentions, so NIL recall is zero. Undefined precision is reported as null, not a perfect score.
+Four held-out excerpts contain 49 gold mentions. The current preferred-label baseline has extraction F1 24.1% and end-to-end linking F1 17.2%. Expanded multilingual alternatives have extraction F1 32.3%; ranked candidate retrieval reaches 100% recall@3 on the nine matched non-NIL spans. The conservative policy accepts five of those nine links (55.6% coverage), gets all five accepted links right, and abstains on six of thirteen total predictions; end-to-end linking F1 is 16.1%. Neither exact-alias detector discovers unknown mentions, so NIL recall remains zero. These are frozen-test diagnostic measurements, not threshold-tuning targets or evidence of production quality.
 
-These baselines expose missing aliases, abbreviation recognition, product/NIL detection, and ambiguous links. The next extractor should be developed on the development split and evaluated on a larger independently adjudicated test set. Do not infer learner proficiency from these mentions. Do not claim full-PDF or Arabic performance from this dataset.
+These baselines expose missing aliases, abbreviation recognition, product/NIL detection, and ambiguous links. The retrieval/ranking boundary is now ready for a trained detector, bi-encoder retriever, and cross-encoder ranker, but none is bundled yet. Any learned replacement must be developed on the development split and evaluated on a larger independently adjudicated test set. Do not infer learner proficiency from these mentions. Do not claim full-PDF or Arabic performance from this dataset.

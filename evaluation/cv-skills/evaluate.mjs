@@ -33,6 +33,9 @@ function validateSpans(spans,text,prediction){
     span.candidates.some(id=>id===null || !concept(id)) || new Set(span.candidates).size!==span.candidates.length ||
     (span.skillId!==null && !span.candidates.includes(span.skillId))))
    throw new TypeError('Predictions need up to ten unique ranked candidates containing the selected non-NIL ID');
+  if(prediction && span.decision!==undefined && (!['linked','nil','abstain'].includes(span.decision) ||
+    (span.decision==='linked')!==(span.skillId!==null)))
+   throw new TypeError('Decision must be linked with a skillId, or nil/abstain with a null skillId');
  }
 }
 
@@ -50,25 +53,32 @@ export function evaluate(gold,predictions,{split='test'}={}){
  const selected=gold.filter(record=>record.split===split);
  if(!selected.length)throw new RangeError(`No annotated ${split} documents; no benchmark score can be reported`);
  const summarize=records=>{
-  let goldCount=0,predictedCount=0,matched=0,linked=0,goldNil=0,predictedNil=0,correctNil=0,matchedLinked=0;
+  let goldCount=0,predictedCount=0,matched=0,linked=0,goldNil=0,predictedNil=0,correctNil=0,matchedLinked=0,
+   acceptedLinked=0,correctAcceptedLinked=0,abstained=0,matchedAbstained=0;
   const hits={1:0,3:0,5:0};
   for(const record of records){
    const expected=new Map(record.annotations.map(span=>[key(span),span]));
    const spans=byDocument.get(record.documentId)??[];
    goldCount+=expected.size;predictedCount+=spans.length;goldNil+=record.annotations.filter(span=>span.skillId===null).length;
    for(const span of spans){
-    if(span.skillId===null)predictedNil++;
+    const isAbstention=span.decision==='abstain';
+    if(isAbstention)abstained++;else if(span.skillId===null)predictedNil++;
     const annotation=expected.get(key(span));if(!annotation)continue;
-    matched++;if(span.skillId===annotation.skillId)linked++;
-    if(annotation.skillId===null && span.skillId===null)correctNil++;
-    if(annotation.skillId!==null){matchedLinked++;for(const k of [1,3,5])if(span.candidates.slice(0,k).includes(annotation.skillId))hits[k]++;}
+    if(isAbstention)matchedAbstained++;
+    matched++;if(!isAbstention && span.skillId===annotation.skillId)linked++;
+    if(annotation.skillId===null && span.skillId===null && !isAbstention)correctNil++;
+    if(annotation.skillId!==null){matchedLinked++;if(span.skillId!==null){acceptedLinked++;if(span.skillId===annotation.skillId)correctAcceptedLinked++;}
+     for(const k of [1,3,5])if(span.candidates.slice(0,k).includes(annotation.skillId))hits[k]++;}
    }
   }
   return {documents:records.length,documentsWithPredictions:records.filter(record=>byDocument.has(record.documentId)).length,
    extraction:prf(matched,predictedCount,goldCount),endToEndLinking:prf(linked,predictedCount,goldCount),
    linkingAccuracyOnMatchedSpans:ratio(linked,matched),
+   selectiveLinking:{correct:correctAcceptedLinked,accepted:acceptedLinked,eligible:matchedLinked,
+    accuracy:ratio(correctAcceptedLinked,acceptedLinked),coverage:ratio(acceptedLinked,matchedLinked)},
    retrievalOnMatchedNonNilSpans:{denominator:matchedLinked,recallAt1:ratio(hits[1],matchedLinked),recallAt3:ratio(hits[3],matchedLinked),recallAt5:ratio(hits[5],matchedLinked)},
-   nil:prf(correctNil,predictedNil,goldNil)};
+   nil:prf(correctNil,predictedNil,goldNil),
+   abstention:{predicted:abstained,matched:matchedAbstained,rate:ratio(abstained,predictedCount)}};
  };
  return {split,catalogVersion:selected[0].catalogVersion,offsetUnit:'unicode_code_points',
   overall:summarize(selected),byLanguage:Object.fromEntries(['fr','ar','mixed'].filter(language=>selected.some(record=>record.language===language))

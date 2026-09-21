@@ -4,7 +4,7 @@ This first research implementation connects existing evidence/session tables to 
 
 ## Server integration
 
-Use an authenticated learner ID from the host application, never an arbitrary browser-supplied identity. The standalone repository does not enforce tenant/user authorization. Apply the project's existing migrations through 050 before using these APIs; no additional migration is needed.
+Use an authenticated learner ID from the host application, never an arbitrary browser-supplied identity. The standalone repository does not enforce tenant/user authorization. Apply the project's existing migrations through 055 before using these APIs.
 
 ```ts
 const result = await engine.ranker.recommendFromEvidence(

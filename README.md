@@ -1,87 +1,185 @@
-# PRAXIS Standalone Recommendation Engine & Career Compass
+# PRAXIS Compass — moteur autonome de compétences et de recommandation
 
-A clean, self-contained extraction of the PRAXIS core:
-1. **Career Compass:** Discovers next career horizons, mobility paths, shared skill capital, and bridge skill requirements across 3,046 ESCO occupations.
-2. **Recommendation Engine:** 9-dimensional multi-objective linear ranking model with Bayesian empirical Bayes shrinkage and cryptographic provenance.
-3. **Database Substrate:** PostgreSQL migrations (`001` through `050`) and automated migration runner.
+PRAXIS Compass est un moteur TypeScript autonome qui transforme des preuves de compétences en parcours professionnels et pédagogiques explicables. Il combine un référentiel de métiers et de compétences fondé sur ESCO, un moteur de recommandation multi-critères, un planificateur de parcours, une gestion explicite de l’incertitude et plusieurs briques de recherche destinées à l’évaluation des compétences.
 
----
+Le dépôt contient le cœur technique de PRAXIS, son schéma PostgreSQL, une interface locale pour apprenants, des simulations déterministes et les protocoles expérimentaux nécessaires pour évaluer le système avant un usage réel.
 
-## Folder Structure
+> **Statut : prototype de recherche avancé.** Les contrats, migrations et tests sont fonctionnels. Les modèles lexicaux fournis constituent des bases reproductibles, pas des modèles entraînés prêts pour la production. Les validations humaines, les audits de biais et les expérimentations prospectives restent obligatoires.
 
+## Ce que le système permet
+
+- explorer des mobilités professionnelles à partir des métiers et compétences ESCO ;
+- distinguer les compétences partagées des compétences-ponts à développer ;
+- classer les formations avec neuf critères normalisés et des contraintes strictes ;
+- construire des parcours tenant compte des prérequis, du budget, du temps et du calendrier ;
+- conserver la provenance cryptographique des entrées et décisions ;
+- extraire et relier des compétences de CV avec une décision explicite `NIL` ou une abstention ;
+- demander à l’apprenant de confirmer, corriger ou rejeter les compétences extraites ;
+- estimer une aptitude par IRT bayésien avec intervalle d’incertitude ;
+- assister la rédaction d’items d’évaluation sans contourner la revue d’expert ;
+- corriger partiellement les biais des annonces d’emploi à l’aide de données officielles ;
+- proposer des correspondances entre réseaux de tâches ESCO, ROME et O*NET ;
+- comparer hors ligne un modèle de référence à des modèles graphe ou séquentiels, uniquement lorsque les données réelles sont suffisantes.
+
+## Vue d’ensemble du flux
+
+```mermaid
+flowchart LR
+    A[CV, déclarations et preuves] --> B[Extraction ESCO]
+    B --> C[Confirmation apprenant]
+    C --> D[Profil de compétences]
+    E[Évaluation adaptative IRT] --> D
+    D --> F[Écarts vers un métier cible]
+    G[Catalogue de formations] --> H[Moteur de recommandation]
+    F --> H
+    I[Contraintes apprenant] --> H
+    H --> J[Classement explicable]
+    H --> K[Parcours avec prérequis]
+    J --> L[Résultats et retours réels]
+    K --> L
+    L --> M[Évaluation contrôlée des modèles]
+    N[Marché du travail corrigé] --> F
+    O[Crosswalk de tâches] --> F
 ```
-praxis-engine-standalone/
-├── README.md                           # This documentation
-├── package.json                        # Dependencies (pg, dotenv, tsx, typescript)
-├── tsconfig.json                       # TypeScript compiler options
-├── docker-compose.db.yml               # Standalone PostgreSQL 17 container
-├── .env.example                        # Database configuration template
-│
-├── database/                           # Database migrations & tools
-│   ├── migrations/                     # Migrations (001 to 051)
-│   ├── rollbacks/                      # Paired down-migrations (never run by the runner)
-│   └── migrate.ts                      # Standalone migration runner (checksum-pinned)
-│
+
+Les composants d’IA proposent, classent ou estiment. Ils ne publient pas seuls une compétence, un item d’évaluation, un crosswalk ou un nouveau modèle en production.
+
+## Les huit chantiers de mise en œuvre
+
+| Étape | Composant | Résultat actuel | Garde-fou principal |
+|---:|---|---|---|
+| 1 | Extraction ESCO en deux temps | détection puis liaison vers un concept, avec `NIL` et abstention | aucune correspondance forcée |
+| 2 | Annotation de CV français/arabe | workflow aveugle à deux annotateurs et adjudication | séparation développement/test et traçabilité |
+| 3 | Confirmation par l’apprenant | confirmer, corriger, rejeter ou déclarer l’incertitude | aucune maîtrise déduite sans attestation explicite |
+| 4 | IRT bayésien | posterior d’aptitude, incertitude des paramètres et sélection adaptative | arrêt fondé sur couverture, information et précision |
+| 5 | Rédaction d’items assistée par IA | génération structurée et validation déterministe | revue indépendante obligatoire par un expert métier |
+| 6 | Marché du travail | déduplication, post-stratification et intervalles d’incertitude | publication bloquée si la couverture est insuffisante |
+| 7 | Crosswalk de réseaux de tâches | propositions top-k ESCO/ROME/O*NET avec preuves transparentes | adjudication humaine, `NIL` et abstention |
+| 8 | Recommandation graphe/séquentielle | protocole hors ligne sans fuite temporelle | pas d’expérience tant que les résultats réels sont insuffisants |
+
+La documentation détaillée de chaque chantier se trouve dans [`docs/`](docs/).
+
+## Architecture du dépôt
+
+```text
+Praxis-Compass/
 ├── src/
-│   ├── kernel/                         # Foundational types & provenance
-│   │   ├── algorithm-versions.ts       # Central version registry
-│   │   ├── computation-provenance.ts   # SHA-256 inputs hashing & provenance wrapper
-│   │   ├── evidence.ts                 # Evidence ladder (self-declared to certified)
-│   │   └── scores.ts                   # Branded MasteryScore and PriorityScore types
-│   │
-│   ├── engine/                         # Recommendation & Scoring
-│   │   ├── recommendation-engine.ts    # 9-feature scoring, priors, diversity rerank
-│   │   ├── recommendation.types.ts     # Data structures
-│   │   ├── learning-path-planner.ts    # Prerequisite-aware pathway search
-│   │   └── recommendation.repository.ts# Lean PostgreSQL query adapter
-│   │
-│   ├── compass/                        # Career Compass & Trajectory
-│   │   ├── career-compass.service.ts   # ESCO essential skill overlap & mobility query
-│   │   └── career-compass.types.ts     # Destination, shared skills, bridge skills
-│   │
-│   └── index.ts                        # Main library export
-│
-└── examples/
-    └── demo-run.ts                     # Executable CLI to query Compass & Ranker
+│   ├── kernel/          # types fondamentaux, scores, versions et provenance
+│   ├── evidence/        # résolution et hiérarchie des preuves apprenant
+│   ├── extraction/      # extraction/lien ESCO avec NIL et abstention
+│   ├── confirmation/    # validation des compétences par l’apprenant
+│   ├── assessment/      # posterior IRT et rédaction d’items
+│   ├── labor-market/    # ingestion corrigée du marché du travail
+│   ├── crosswalk/       # propositions de correspondances entre taxonomies
+│   ├── experiments/     # comparaison graphe/séquentielle gouvernée
+│   ├── engine/          # classement et planification des parcours
+│   ├── compass/         # exploration des mobilités professionnelles
+│   └── index.ts         # API publique de la bibliothèque
+├── database/
+│   ├── migrations/      # migrations numérotées jusqu’à 057
+│   ├── rollbacks/       # restaurations explicites disponibles
+│   └── migrate.ts       # exécuteur de migrations avec sommes de contrôle
+├── learner/             # application web locale pour l’apprenant
+├── evaluation/          # benchmark CV et workflow d’annotation
+├── simulation/          # monde synthétique et oracle indépendant
+├── tests/               # tests unitaires et d’intégration
+├── examples/            # démonstration de l’API
+├── docs/                # protocoles et limites des composants
+└── docker-compose.db.yml
 ```
 
----
+## Principes de conception
 
-## Quickstart
+### L’absence de preuve n’est pas un niveau zéro
 
-### 1. Install dependencies
+Une compétence inconnue reste inconnue. Le moteur ne transforme jamais silencieusement une absence d’information en incapacité. Une déclaration explicite de niveau zéro est conservée séparément d’une donnée manquante.
+
+### L’incertitude est une sortie du système
+
+Les extracteurs peuvent répondre `NIL` ou s’abstenir. Le modèle IRT retourne une distribution et un intervalle crédible. Les corrections du marché du travail exposent leur taille d’échantillon effective et leurs limites de couverture.
+
+### Les décisions sensibles restent gouvernées
+
+Les items générés par IA exigent une revue indépendante. Les crosswalks restent des propositions. Un modèle expérimental ne peut atteindre que le statut de candidat à un essai prospectif ; une évaluation hors ligne ne suffit pas pour une promotion automatique.
+
+### Chaque résultat doit pouvoir être rejoué
+
+Les versions d’algorithmes, instantanés d’entrée, empreintes SHA-256, décisions de revue et traces append-only permettent d’auditer les résultats sans dépendre de l’état courant de la base.
+
+## Prérequis
+
+- Node.js 20 ou version ultérieure ;
+- npm ;
+- PostgreSQL 17, localement ou avec Docker ;
+- Docker Compose si vous utilisez la base fournie.
+
+## Installation rapide
+
 ```bash
-cd praxis-engine-standalone
+git clone https://github.com/AbderrahmaneSamali/Praxis-Compass.git
+cd Praxis-Compass
 npm install
 ```
 
-### 2. Configure Database
-Copy `.env.example` to `.env`:
+Créez ensuite votre configuration locale.
+
+Sous macOS ou Linux :
+
 ```bash
 cp .env.example .env
 ```
 
-If you don't already have Postgres running, launch the standalone container:
+Sous PowerShell :
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Le fichier `.env` est ignoré par Git. Ne publiez jamais de mot de passe ou d’URL de base contenant des identifiants réels.
+
+### Démarrer PostgreSQL et appliquer le schéma
+
 ```bash
 npm run db:up
 npm run migrate
 ```
 
-### 3. Run the Interactive Demo
-Test the Career Compass and Recommendation Engine directly in your terminal:
+Le runner mémorise les sommes de contrôle des migrations appliquées. Il ne faut pas modifier rétroactivement une migration déjà déployée : ajoutez une nouvelle migration corrective.
+
+### Compiler et tester
+
+```bash
+npm run typecheck
+npm test
+```
+
+`npm test` compile le projet puis exécute les tests unitaires Node. Les tests PostgreSQL et l’interface apprenant sont séparés afin d’éviter une modification accidentelle d’une base de développement.
+
+### Lancer la démonstration
+
 ```bash
 npm run demo
 ```
-Or test with any occupation query:
+
+Une profession peut aussi être passée directement :
+
 ```bash
 npx tsx examples/demo-run.ts "scientifique des données"
 npx tsx examples/demo-run.ts "statisticien"
 npx tsx examples/demo-run.ts "gestionnaire de projet"
 ```
 
----
+### Lancer l’interface apprenant
 
-## Programmatic Usage in Any Project (Next.js, Express, FastAPI, etc.)
+Après migration de la base et définition de `DATABASE_URL` :
+
+```bash
+npm run learner
+```
+
+Le guide [`docs/learner-screen.md`](docs/learner-screen.md) décrit le bootstrap de prévisualisation, les données fictives, l’isolation des navigateurs et les frontières de l’évaluation.
+
+## Utilisation de la bibliothèque
 
 ```typescript
 import { PraxisEngine } from '@praxis/engine-standalone';
@@ -90,85 +188,195 @@ const engine = new PraxisEngine({
   connectionString: process.env.DATABASE_URL,
 });
 
-// 1. Explore Career Horizons from a job:
-const compass = await engine.compass.explore('occupation_esco_d3edb8f83a0647a08fb99b212c006aa2', 'fr');
+// Explorer les destinations possibles depuis un métier ESCO.
+const compass = await engine.compass.explore(
+  'occupation_esco_d3edb8f83a0647a08fb99b212c006aa2',
+  'fr',
+);
 
-for (const dest of compass.destinations) {
-  console.log(`${dest.label}: ${dest.bridgePercentage}% weighted target coverage`);
-  console.log(`${dest.shared}/${dest.totalSkills} shared taxonomy skills (${dest.rawOverlapPercentage}% raw overlap)`);
-  console.log(`Bridge skills to develop: ${dest.bridgeSkills.map(s => s.label).join(', ')}`);
+for (const destination of compass.destinations) {
+  console.log(destination.label);
+  console.log(`${destination.bridgePercentage}% de couverture pondérée`);
+  console.log(destination.bridgeSkills.map((skill) => skill.label));
 }
 
-// 2. Run the 9-Feature Course Ranker:
-const results = await engine.ranker.recommendForTarget(learnerState, targetOccupationId);
-console.log(`Ranked ${results.recommendations.length} courses with cryptographic provenance.`);
-console.log(results.status, results.missingSkillIds, results.learningPlans.status);
+// Recalculer les écarts et recommandations depuis le profil de l’apprenant.
+const result = await engine.ranker.recommendForTarget(
+  learnerState,
+  targetOccupationId,
+);
+
+console.log(result.status);
+console.log(result.recommendations);
+console.log(result.learningPlans);
 
 await engine.close();
 ```
 
----
+L’instance `PraxisEngine` expose également :
 
-## The 9 Recommendation Features
+| Propriété | Responsabilité |
+|---|---|
+| `compass` | exploration des métiers voisins et compétences-ponts |
+| `ranker` | recommandation, preuves, persistance des impressions |
+| `planner` | recherche de parcours respectant les prérequis |
+| `confirmations` | décisions de confirmation des compétences extraites |
+| `assessments` | sessions IRT et traces du posterior |
+| `itemAuthoring` | brouillons d’items, validation et revue d’expert |
+| `laborMarket` | lots d’ingestion et estimations corrigées |
+| `taskCrosswalks` | propositions et revues de correspondances de tâches |
+| `recommenderExperiments` | cohortes et résultats expérimentaux agrégés |
 
-Every candidate course is scored using 9 normalized $[0, 1]$ features:
+## Classement des formations
 
-1. **`gap_coverage`**: Weighted fraction of learner's skill gaps closed by this course.
-2. **`precision`**: Penalizes bloated courses that teach 30 irrelevant skills to cover 1 gap.
-3. **`level_fit`**: Matches course entry level against learner's evidenced current level.
-4. **`evidence_confidence`**: Weights candidate by reliability of learner's evidence ladder.
-5. **`constraint_fit`**: Evaluates budget, weekly workload, delivery format, language, and city.
-6. **`outcome_prior`**: Bayesian empirical Bayes shrinkage on completion and satisfaction rates.
-7. **`scarcity`**: Rewards rare, hard-to-find skill coverage.
-8. **`freshness`**: Exponential decay based on upcoming start date.
-9. **`redundancy_penalty`**: Penalizes material the learner has already mastered.
+Chaque formation candidate reçoit neuf variables normalisées dans l’intervalle $[0,1]$ :
 
-## Reliability changes and API contracts
+| Variable | Interprétation |
+|---|---|
+| `gap_coverage` | part pondérée des écarts de compétences couverte |
+| `precision` | pénalité des formations contenant trop de contenu hors cible |
+| `level_fit` | adéquation entre prérequis et niveau démontré |
+| `evidence_confidence` | fiabilité des preuves disponibles |
+| `constraint_fit` | budget, charge, format, langue et localisation |
+| `outcome_prior` | a priori bayésien sur l’achèvement et la satisfaction |
+| `scarcity` | valeur des compétences rares dans le catalogue |
+| `freshness` | décroissance selon la prochaine date de début |
+| `redundancy_penalty` | pénalité du contenu déjà maîtrisé |
 
-Apply migration `050_recommendation_reliability.sql` with `npm run migrate` when upgrading. Historical migrations are unchanged. The new migration preserves the numerical weights, activates `praxis-rank-reliable-v4`, and adds full input snapshots to immutable impressions. Build with `npm run build` before consuming `dist`. To roll back 050, follow [`database/rollbacks/050_recommendation_reliability.down.sql`](database/rollbacks/050_recommendation_reliability.down.sql).
+Les contraintes dures sont évaluées avant le classement. Une formation non publiée, hors budget, dans une langue interdite ou dont les prérequis sont inconnus ne devient pas admissible grâce à un bon score.
 
-`recommendForTarget(learnerState, occupationId, options?, locale?)` derives the complete target profile and reconstructs its gaps from supplied skill levels. Missing target skills return `insufficient_profile` and `missingSkillIds`; absence of evidence is never treated as demonstrated level zero. A prerequisite declaration supplies a level with `very_low` confidence unless an existing skill record supplies its confidence. Derived ESCO levels remain disclosed application defaults; authored levels are marked reviewed.
+Les statuts retournés distinguent notamment :
 
-`recommend(learnerState, occupationId, options?)` is the lower-level API for a caller that has already assembled target gaps. Set `learnerState.targetOccupationId` to bind those gaps; a different requested target is rejected. Unbound legacy states remain accepted and are labelled `targetStateSource: 'caller_supplied'`. Use `recommendForTarget` for role selection changes.
+- `ok` : recommandations directes disponibles ;
+- `plan_available` : un parcours de plusieurs étapes est nécessaire ;
+- `insufficient_profile` : preuves insuffisantes, avec les compétences manquantes ;
+- `goal_satisfied` : la cible est déjà satisfaite ;
+- `no_eligible_courses` : aucun élément du catalogue ne respecte les contraintes.
 
-Results distinguish `ok`, `plan_available`, `insufficient_profile`, `goal_satisfied`, and `no_eligible_courses`. Direct recommendations must advance an evidenced target gap. `relatedRecommendations` contains separately labelled taxonomy/pathway suggestions; their adjacency does not establish goal progress or prerequisite readiness. Candidate generation scores items before the cap and gives direct progress precedence over related suggestions. Catalog frequency counts distinct published items in the chosen reviewed or bypass catalog scope.
+## Enregistrer ce qui a réellement été affiché
 
-Results include `learningPlans`, `exclusions`, `droppedItemIds`, one `scoringAt`, `isExploration`, `explorationProbability`, `algorithmVersion`, `inputSnapshot`, and `inputsHash`. Exploration shuffles only the selected top ten; it is an ordering experiment, not exploration of unseen catalog items. `zeroCandidates` refers to an empty direct recommendation list; plans or related options may still exist.
-
-`engine.planner.plan(learnerState, occupationId, options?)` assembles catalog inputs for the planner. A useful one-course solution is represented. Partial plans continue through further courses until the target is complete or a bound is reached. Each plan exposes `complete`; the result exposes `status`, `searchTruncated`, `limits`, `missingPrerequisites`, and `blockingConstraints`. Rejection counts in `blockingConstraints` describe encountered conditions, not proof that a condition prevents every possible solution. Search remains approximate: default depth 4, candidate cap 200, beam width 64. Prerequisites are traced backward independently of item input order, and zero-weight outcomes do not confer skills.
-
-The default catalog remains `reviewed_online_offers`. `allowAllPublishedOffers: true` explicitly bypasses review but still requires published, actionable offers and hard learner eligibility. Its result carries `reviewBypassed: true`. The demo enables this bypass for examples; production callers should use the default reviewed catalog.
-
-Compass ranks and limits all candidate occupations using smoothed inverse-frequency-weighted destination coverage. `similarityScore` is the unrounded ranking value; `bridgePercentage` is its rounded percentage. `rawOverlapPercentage` retains the simple shared/total ratio. This changes the meaning of `bridgePercentage` from the earlier raw overlap. The result declares `metric: 'idf_weighted_destination_coverage'` and `evidenceBasis: 'occupation_taxonomy'`. Shared occupation requirements are not evidence that an individual holds those skills. Locale-aware labels and concept-URI inputs are supported.
-
-## Recording displayed results
-
-Recommendation and planning calls are read-only. Record the result after it is actually displayed, rather than logging every preview:
+Le calcul est en lecture seule. Une impression ne doit être enregistrée qu’après affichage du résultat :
 
 ```typescript
-const result = await engine.ranker.recommendForTarget(learnerState, targetOccupationId);
-// Render result, including its insufficient-profile status when appropriate.
+const result = await engine.ranker.recommendForTarget(
+  learnerState,
+  targetOccupationId,
+);
+
+// Après rendu dans l’application hôte :
 await engine.ranker.recordImpression(result, 'career_report', false);
 ```
 
-The learner and target occupation must exist in the database, and migration 050 must be applied. The write is transactional: impression header, actual direct recommendation ranks, features, reasons, prior provenance, learning plans and replay snapshot are stored together. Related cards are captured in the full snapshot. `isExample: true` identifies demonstration impressions; example-source outcomes and fixture catalog outcomes are excluded from ranking priors. Snapshot integrity is verified before writing; failures roll back. Recording the same request twice raises the existing immutable-record uniqueness error. Keep the returned `requestId` to associate later feedback/outcomes with the source impression. The caller remains responsible for its feedback/outcome collection flow and scheduled health aggregation.
+L’écriture transactionnelle conserve les rangs servis, les variables, les raisons, les plans et l’instantané de rejeu. Les résultats d’exemple et de fixture sont identifiés afin de ne pas contaminer les a priori issus d’observations réelles.
+
+## Extraction et annotation des compétences de CV
+
+Le pipeline sépare :
+
+1. la détection d’une mention dans le texte ;
+2. la liaison de cette mention à un concept d’une version gelée d’ESCO.
+
+Cette séparation permet de mesurer indépendamment les erreurs d’extraction et de liaison. Les offsets utilisent les points de code Unicode, notamment pour l’arabe et les caractères supplémentaires. Une mention ambiguë peut provoquer une abstention ; une mention sans concept admissible produit `NIL`.
+
+Le mini-pilote local contient sept extraits désidentifiés de sections de compétences, avec séparation par sujet entre développement et test. Ses annotations sont provisoires tant qu’une adjudication humaine indépendante n’a pas été achevée. Il ne démontre ni la performance sur des CV complets ni la généralisation à l’arabe.
+
+```bash
+npm run cv:benchmark
+npm run cv:annotation -- --help
+```
+
+Voir [`evaluation/cv-skills/README.md`](evaluation/cv-skills/README.md) et [`evaluation/cv-skills/annotation/README.md`](evaluation/cv-skills/annotation/README.md).
+
+## Évaluation IRT et banque d’items
+
+Le module IRT implémente un modèle logistique à deux paramètres sur une grille numérique :
+
+- mise à jour bayésienne du posterior après chaque réponse ;
+- marginalisation de l’incertitude déclarée des paramètres d’item ;
+- sélection du prochain item par information postérieure attendue ;
+- contrôle de l’exposition ;
+- arrêt conditionné par la couverture, l’information et la précision ;
+- persistance append-only et vérification d’intégrité.
+
+Une probabilité postérieure n’est pas automatiquement une preuve de maîtrise. Seule une session de production complète, couverte et réconciliée peut entrer dans l’échelle de preuves.
+
+La génération assistée d’items produit uniquement des brouillons non calibrés. La publication exige un expert métier indépendant, une attestation explicite et une checklist complète. La calibration pilote reste une étape distincte.
+
+## Marché du travail et crosswalks
+
+L’ingestion du marché du travail déduplique les annonces entre sources puis calibre leurs strates sur une source officielle compatible. Elle calcule des poids bornés, une taille d’échantillon effective et des intervalles d’incertitude. Les cellules officielles non couvertes et les annonces sans benchmark bloquent la publication des estimations concernées.
+
+Les crosswalks utilisent le texte des tâches dans une même langue, les ancres de métiers revues, les ancres de compétences gouvernées et le contexte du réseau de tâches. Ils proposent des candidats top-k, jamais une équivalence définitive. Les scores sont masqués pendant l’adjudication afin de réduire l’ancrage du réviseur.
+
+## Expériences graphe et séquentielles
+
+Le protocole expérimental exige des résultats d’apprentissage réels, résolus et horodatés. La séparation temporelle est stricte : caractéristiques, graphe et catalogue doivent être disponibles avant le cas évalué. Les modèles sont comparés sur les mêmes candidats admissibles et les mêmes cas.
+
+La promotion hors ligne dépend à la fois :
+
+- de l’amélioration de la métrique principale avec intervalle de confiance ;
+- de la couverture du catalogue ;
+- de la non-infériorité du pire segment ;
+- de la non-infériorité sur les gains de compétences évalués.
+
+Un résultat positif autorise seulement l’examen d’un essai prospectif gouverné.
 
 ## Validation
 
+| Commande | Portée |
+|---|---|
+| `npm run typecheck` | vérification TypeScript du code source et des scripts couverts |
+| `npm test` | compilation et suite unitaire complète |
+| `npm run test:db` | requêtes et écritures sur une base PostgreSQL de test vide |
+| `npm run test:learner` | parcours de l’interface apprenant avec base dédiée |
+| `npm run simulate` | simulation déterministe avec oracle indépendant |
+| `npm run cv:benchmark` | évaluation du baseline lexical sur le pilote CV |
+
+Pour `test:db`, définissez `PRAXIS_TEST_DATABASE_URL` vers une **base vide dont le nom se termine par `_test`**. Le test refuse une base contenant déjà le schéma `praxis`.
+
+## Documentation technique
+
+- [Preuves et passage vers l’évaluation](docs/evidence-and-assessment.md)
+- [Confirmation des compétences par l’apprenant](docs/learner-skill-confirmation.md)
+- [Posterior IRT et incertitude](docs/irt-posterior.md)
+- [Rédaction d’items assistée par IA](docs/ai-assisted-item-drafting.md)
+- [Ingestion corrigée du marché du travail](docs/bias-corrected-labor-market-ingestion.md)
+- [Propositions de crosswalk par réseaux de tâches](docs/task-network-crosswalk.md)
+- [Expériences graphe et séquentielles](docs/graph-sequential-recommender-experiments.md)
+- [Écran apprenant](docs/learner-screen.md)
+- [Entretien adaptatif déterministe](ADAPTIVE_INTERVIEW.md)
+- [Simulation](simulation/README.md)
+
+## Limites connues
+
+- Le dépôt ne fournit pas encore de modèle multilingue entraîné de détection ou de liaison de compétences.
+- Les baselines d’extraction et de crosswalk sont lexicales et reproductibles ; elles servent de référence expérimentale.
+- Le petit pilote CV ne permet pas une estimation fiable de la performance en production.
+- L’analyse du fonctionnement différentiel des items (DIF) par langue et groupe reste indispensable.
+- Les corrections statistiques réduisent certains biais des annonces en ligne sans éliminer les biais de sélection résiduels.
+- Les recommandations dépendent de la qualité du catalogue, des preuves apprenant et des correspondances taxonomiques.
+- Le schéma fournit des garde-fous techniques ; l’application hôte reste responsable du consentement, de l’accès, de la rétention et de la conformité réglementaire.
+
+## Sécurité et données
+
+- ne placez aucun CV nominatif dans le dépôt ;
+- stockez les travaux d’annotation sensibles dans `evaluation/cv-skills/annotation/private/`, déjà ignoré par Git ;
+- gardez `.env` local et utilisez un gestionnaire de secrets en déploiement ;
+- vérifiez les licences et conditions d’utilisation des versions ESCO, ROME, O*NET et des sources de marché du travail ;
+- séparez les données fictives, expérimentales et réelles dans toute analyse.
+
+## Contribuer
+
+Avant toute proposition de modification :
+
 ```bash
+npm install
 npm run typecheck
 npm test
 ```
 
-Type checking includes source, examples and the migration runner. Tests exercise complete and partial plans, prerequisites, cycles, cumulative constraints, candidate recall, target changes, evidence gaps, publication filtering, numerical validation, exploration, snapshot integrity and transactional recording. No new runtime dependencies are required.
+Une modification de contrat algorithmique doit inclure les tests correspondants, une nouvelle version dans `src/kernel/algorithm-versions.ts` et, si nécessaire, une migration additive. Les changements qui touchent une décision humaine doivent conserver l’indépendance du réviseur et la trace d’audit.
 
-For real PostgreSQL query verification, create an **empty dedicated database whose name ends in `_test`**, set `PRAXIS_TEST_DATABASE_URL`, and run `npm run test:db`. The fixture test executes actual catalog/target/Compass/neighbour SQL, migration 050, and impression inserts. It refuses a database with an existing `praxis` schema and rolls back its fixture DDL/data. It does not replace validation of the full migration chain against a deployment database.
-# Research implementation: evidence and assessment
+## Licence
 
-The engine now supports `ranker.recommendFromEvidence()` and returns an assessment handoff from target-derived recommendations. See [the integration guide](docs/evidence-and-assessment.md) for evidence precedence, assessment availability and host application routing. The [CV evaluation guide](evaluation/cv-skills/README.md) provides French/Arabic extraction and linking evaluation; its included examples are synthetic.
-
-## Learner application and measured real-CV pilot
-
-The [learner screen guide](docs/learner-screen.md) covers starting the local French application with PostgreSQL, all 51 migrations, a guarded dedicated preview bootstrap and fictional course seed, and `npm run test:learner`. The screen stores declarations and preferences, separates unknown from explicitly declared zero, and displays target-based recommendations and projected plans. Run `npm run learner` with `DATABASE_URL` set to a migrated database.
-
-The original synthetic evaluation examples remain examples. The [real local CV pilot](evaluation/cv-skills/pilot/README.md) now contains seven deidentified real CV skill-section excerpts, 92 provisional annotations, subject-separated development/test splits and a frozen official ESCO catalog. Run `npm run cv:benchmark` to regenerate both dictionary baselines and their measured results. This small pilot does not establish full-CV or Arabic performance and its annotations await independent human adjudication.
+Aucun fichier de licence n’est encore inclus dans ce dépôt. Tant qu’une licence explicite n’est pas ajoutée, aucun droit de réutilisation ou de redistribution n’est accordé par défaut.

@@ -15,6 +15,27 @@ test('NIL false positives are counted and missing denominators stay undefined',(
  assert.equal(result.nil.precision,.5);assert.equal(result.nil.recall,1);
  assert.equal(result.retrievalOnMatchedNonNilSpans.recallAt1,null);
 });
+test('explicit abstentions are measured separately and never scored as correct NIL',()=>{
+ const result=evaluate([record],[{documentId:'cv',spans:[
+  {start:7,end:14,decision:'abstain',skillId:null,candidates:['possible']},
+ ]}]).overall;
+ assert.equal(result.abstention.predicted,1);assert.equal(result.abstention.matched,1);
+ assert.equal(result.nil.predicted,0);assert.equal(result.nil.correct,0);
+ assert.equal(result.endToEndLinking.correct,0);
+ assert.equal(result.selectiveLinking.accepted,0);assert.equal(result.selectiveLinking.coverage,null);
+ assert.throws(()=>evaluate([record],[{documentId:'cv',spans:[
+  {start:0,end:6,decision:'linked',skillId:null,candidates:[]},
+ ]}]),/Decision/);
+});
+test('selective linking reports accepted accuracy and coverage on matched non-NIL spans',()=>{
+ const result=evaluate([record],[{documentId:'cv',spans:[
+  {start:0,end:6,decision:'abstain',skillId:null,candidates:['python']},
+ ]}]).overall;
+ assert.equal(result.selectiveLinking.eligible,1);
+ assert.equal(result.selectiveLinking.accepted,0);
+ assert.equal(result.selectiveLinking.accuracy,null);
+ assert.equal(result.selectiveLinking.coverage,0);
+});
 test('CV evaluator rejects subject leakage, unknown documents, duplicate spans and empty datasets',()=>{
  assert.throws(()=>validateDataset([record,{...record,documentId:'other',split:'dev'}]),/both dev and test/);
  assert.throws(()=>evaluate([record],[{documentId:'unknown',spans:[]}]),/Unknown/);
