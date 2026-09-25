@@ -1,46 +1,50 @@
-# Learner screen and PostgreSQL verification
+# Parcours d’exploration PRAXIS
 
-The French learner screen lets a learner choose a published, authored role, set budget, weekly hours, language and online format, declare skill levels with work examples, and view eligible courses and projected learning plans. Evidence and preferences persist in PostgreSQL. Unknown is a separate choice from an explicit level zero. Self-declarations remain low-confidence evidence and do not replace stronger validated evidence.
+L’interface locale en français suit cinq étapes : point de départ, possibilités, comparaison, carte de compétences et premier pas. Une personne peut explorer sans remplir son profil. Les exigences absentes restent **non connues**; un niveau explicitement déclaré plus bas apparaît **à développer**. Une déclaration reste une preuve de faible autorité, même si son niveau répond à l’exigence.
 
-## Start with an existing database
+## Démarrer
 
-Install dependencies and use a migrated Praxis database. Apply migration 051 after 050. Node 24 is verified here; native TypeScript commands below require Node 22.18 or newer.
+Installer les dépendances, configurer une base PostgreSQL PRAXIS, puis appliquer la migration additive `058_career_exploration.sql` avec le reste du schéma :
 
 ```powershell
-$env:DATABASE_URL = 'postgresql://USER:PASSWORD@HOST:PORT/DATABASE'
+Copy-Item .env.example .env
+npm install
 npm run migrate
 npm run learner
 ```
 
-Open http://127.0.0.1:4173/. The server binds to loopback. This is a local application preview, not a public deployment. Browser identity uses an anonymous HttpOnly cookie backed by a database session. POSTs require matching origin and CSRF token. Impressions are recorded only for results served to the current learner, once per request, including concurrent retries.
+Le serveur charge maintenant `.env` au démarrage. Ouvrir `http://127.0.0.1:4173/`. Il écoute seulement sur l’interface locale. Le cookie de session anonyme permet de retrouver son exploration dans le même navigateur pendant 30 jours; effacer le cookie fait perdre cet accès. Les requêtes de modification exigent un jeton CSRF et la même origine.
 
-## Repeatable dedicated preview database
+Pour créer une base locale de test dédiée, utiliser une base vide dont le nom finit par `_test`, puis exécuter `node --experimental-strip-types database/bootstrap-local.mjs`. Ce bootstrap demande les fichiers ESCO indiqués dans `database/local-esco-prerequisites.json` et charge seulement le sous-ensemble nécessaire; il ne constitue pas une importation ESCO complète. La migration 058 ajoute trois directions **de démonstration** basées sur les profils de compétences éditoriaux préexistants. Leurs descriptions, responsabilités et niveaux exigent une revue métier avant un usage décisionnel. Aucune formation n’est nécessaire pour les explorer.
 
-Create an empty database with a name ending in `_test`, then:
+## API locale
+
+Après `GET /api/bootstrap` (création de session et jeton CSRF) :
+
+| Route | Usage |
+|---|---|
+| `GET /api/profile`, `POST /api/profile` | Lire et modifier le point de départ |
+| `POST /api/profile/skills` | Déclarer ou corriger un niveau avec exemple concret |
+| `POST /api/profile/proposals`, `POST /api/profile/confirmations` | Proposer puis confirmer explicitement des compétences issues du texte |
+| `POST /api/explore`, `GET /api/directions/:id` | Explorer les directions et inspecter leurs exigences |
+| `POST /api/directions/compare` | Comparer deux ou trois directions |
+| `POST /api/exploration/saved` | Enregistrer ou retirer une direction |
+| `POST /api/development-actions/selected` | Choisir une action sans créer de preuve de compétence |
+| `POST /api/feedback` | Donner un retour de compréhension et d’utilité |
+
+Les anciennes routes de recommandation restent disponibles pour l’usage optionnel du classement de formations. Elles ne déterminent jamais les possibilités d’exploration.
+
+## Assistance IA facultative
+
+Le flux manuel fonctionne sans fournisseur. Pour activer les propositions de compétences, configurer `PRAXIS_AI_ENDPOINT` avec une URL HTTPS et, si nécessaire, `PRAXIS_AI_TOKEN`. Le service doit accepter un `POST` JSON contenant `task`, `instructions`, `untrustedExperience` et `allowedSkills`, et retourner `{"proposals":[{"skillId":"...","supportingText":"extrait exact du texte"}]}`. L’appel est limité à 4,5 secondes. Une erreur, un schéma invalide, une compétence absente du catalogue ou un extrait absent du texte produit une réponse sans proposition; le formulaire manuel reste accessible.
+
+Le fournisseur ne fixe aucun niveau. Les propositions sont temporaires, limitées à cinq et liées à la session. Seule une confirmation explicite avec niveau et exemple crée une preuve `self_declared` de faible autorité. Les explications et actions visibles proviennent des exigences structurées et sont générées de façon déterministe.
+
+## Vérification
 
 ```powershell
-$env:DATABASE_URL = 'postgresql://USER:PASSWORD@127.0.0.1:PORT/praxis_learner_test'
-node --experimental-strip-types database/bootstrap-local.mjs
-node database/seed-learner-preview.mjs
-$env:PRAXIS_LEARNER_EXAMPLE = 'true'
-npm run learner
+npm run typecheck
+npm test
 ```
 
-The bootstrap applies all 51 migrations. Existing migrations depend on imported taxonomy identities. The bootstrap supplies the small required subset from the user's official ESCO 1.2.0 RDF archive, with its archive checksum and verified labels; it deliberately leaves this partial release inactive. It is not a complete ESCO graph import. The seed adds five clearly marked fictional offers solely to make the screen testable. These have no enrollment links and no real outcome claims. Example impressions are marked accordingly. Both setup scripts reject database names without the `_test` suffix.
-
-## Integration tests
-
-```powershell
-$env:PRAXIS_TEST_DATABASE_URL = 'postgresql://USER:PASSWORD@127.0.0.1:PORT/praxis_integration_test'
-npm run test:db
-$env:PRAXIS_LEARNER_TEST_DATABASE_URL = $env:DATABASE_URL
-npm run test:learner
-```
-
-The first test requires an empty database and rolls its fixtures back. The second requires the full migrated preview database and fictional seed; it removes only its own test learners. It verifies declarations, superseding old evidence, saved preferences, eligibility filtering, separate learner sessions, replay impressions, and rejected invalid or cross-origin requests.
-
-## Assessment boundary
-
-Set `PRAXIS_ASSESSMENT_URL` to an HTTPS host service to expose launch buttons for eligible assessment banks. The engine rechecks bank availability before launch. The external host owns identity binding, question delivery and scoring. The screen does not invent quiz results or turn CV mentions into demonstrated ability. Without a connected assessment host, learners can declare levels and provide work examples.
-
-The screen does not upload or parse CV PDFs; the separate real-CV pilot measures extraction and linking. Production hosting, authenticated accounts and real verified course ingestion remain separate deployment work.
+Pour les tests PostgreSQL, définir `PRAXIS_LEARNER_TEST_DATABASE_URL` vers une base migrée dédiée finissant par `_test`, puis exécuter `npm run test:learner`. Le test nettoie uniquement les apprenants qu’il crée. Une vérification de la page dans un navigateur exige cette même base en cours d’exécution. Les données fictives de formations créées par `database/seed-learner-preview.mjs` ne sont utiles qu’aux anciennes routes de classement et ne sont pas requises pour l’exploration.

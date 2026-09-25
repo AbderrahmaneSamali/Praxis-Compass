@@ -3,7 +3,8 @@ import {readFile} from 'node:fs/promises';
 import {randomBytes,randomUUID,createHash,timingSafeEqual} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 import pg from 'pg';
-import {StandaloneRecommendationRepository,buildEvidenceProfile,validateLearner} from '../dist/index.js';
+import 'dotenv/config';
+import {StandaloneRecommendationRepository,ExplorationRepository,buildEvidenceProfile,exploreDirections,compareDirections,proposeProfileSkills,validateLearner} from '../dist/index.js';
 
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const equal=(a,b)=>typeof a==='string' && typeof b==='string' && a.length===b.length && timingSafeEqual(Buffer.from(a),Buffer.from(b));
@@ -11,8 +12,8 @@ const problem=(status,message)=>Object.assign(new Error(message),{status});
 const publicFolder=new URL('./public/',import.meta.url);
 const assets={'/':['index.html','text/html; charset=utf-8'],'/app.js':['app.js','text/javascript; charset=utf-8'],'/style.css':['style.css','text/css; charset=utf-8']};
 
-export function createLearnerServer({pool,example=false,assessmentUrl=null}){
- const ranker=new StandaloneRecommendationRepository(pool),csrfTokens=new Map(),displayed=new Map();
+export function createLearnerServer({pool,example=false,assessmentUrl=null,aiProvider=null}){
+ const ranker=new StandaloneRecommendationRepository(pool),exploration=new ExplorationRepository(pool),csrfTokens=new Map(),displayed=new Map(),pendingProposals=new Map();
  if(assessmentUrl && !/^https:\/\//.test(assessmentUrl))throw new TypeError('Assessment integration URL must use HTTPS');
  async function identity(req,res,create=false){
   const token=req.headers.cookie?.match(/(?:^|;\s*)praxis_session=([a-f0-9]{64})(?:;|$)/)?.[1];
@@ -55,6 +56,14 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null}){
   while(cache.size>3)cache.delete(cache.keys().next().value);displayed.set(user.key,cache);
   return {result,assessmentConnected:Boolean(assessmentUrl),example};
  }
+ async function explorationResult(user){
+  const [profile,directions,rows,saved,selectedActions]=await Promise.all([
+   exploration.profile(user.learnerId),exploration.directions(),ranker.skillEvidence(user.learnerId),
+   exploration.savedDirections(user.learnerId),exploration.selectedActions(user.learnerId)]);
+  const evidence=buildEvidenceProfile({learnerId:user.learnerId,constraints:{remoteOnly:true,hoursPerWeek:8}},rows);
+  return {...exploreDirections(profile,directions,evidence,saved),profile,selectedActions};
+ }
+ function shortText(value,max,label){if(typeof value!=='string' || value.length>max)throw problem(400,`${label} invalide.`);return value.trim();}
  async function savePreferences(client,user,profile,prefs){
     const contextId=randomUUID();
     await client.query(`INSERT INTO praxis.learner_context(id,learner_id,context_version,goal_kind,goal_text,hours_per_week,
@@ -84,10 +93,87 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null}){
     const s=saved.rows[0],prefs=s?{hoursPerWeek:Number(s.hours_per_week??8),...(s.budget_max_mad===null?{}:{budgetMad:Number(s.budget_max_mad)}),...(s.languages?.length?{languages:s.languages}:{}),...(s.online_format?{onlineFormat:s.online_format}:{})}:{hoursPerWeek:8,languages:['fr']};
     json({csrf,goals:goals.rows,occupationId:s?.goal_text??goals.rows[0]?.id??null,constraints:prefs,example,assessmentConnected:Boolean(assessmentUrl)});return;
    }
+   if(req.method==='GET' && url.pathname==='/api/profile'){
+    const user=await identity(req,res);json({profile:await exploration.profile(user.learnerId),directions:await exploration.directions()});return;
+   }
+   if(req.method==='GET' && /^\/api\/directions\/[^/]+$/.test(url.pathname)){
+    const user=await identity(req,res),id=decodeURIComponent(url.pathname.split('/')[3]);
+    const result=await explorationResult(user),direction=result.possibilities.find(item=>item.id===id);
+    if(!direction)throw problem(404,'Direction indisponible.');json({direction,selectedActions:result.selectedActions});return;
+   }
    if(req.method!=='POST' || !url.pathname.startsWith('/api/'))throw problem(404,'Page introuvable.');
    const user=await identity(req,res);
    if(req.headers.origin!==`http://${req.headers.host}` || !equal(req.headers['x-praxis-csrf'],csrfTokens.get(user.key)))throw problem(403,'Rechargez la page avant d’envoyer ce formulaire.');
    const data=await body(req);
+   if(url.pathname==='/api/profile'){
+    if(data.currentRoleId!==null && data.currentRoleId!==undefined && !((await exploration.directions()).some(item=>item.roleId===data.currentRoleId)))throw problem(400,'Métier actuel indisponible.');
+    const profile=await exploration.saveProfile({learnerId:user.learnerId,currentRoleId:data.currentRoleId??null,
+     experience:shortText(data.experience,4000,'Expérience'),interests:shortText(data.interests,1000,'Centres d’intérêt'),
+     constraints:shortText(data.constraints,1000,'Contraintes'),updatedAt:null});
+    pendingProposals.delete(user.key);
+    json({profile});return;
+   }
+   if(url.pathname==='/api/profile/proposals'){
+    const profile=await exploration.profile(user.learnerId),directions=await exploration.directions();
+    const catalog=[...new Map(directions.flatMap(item=>item.requirements.map(skill=>[skill.skillId,{skillId:skill.skillId,label:skill.label}]))).values()];
+    const result=await proposeProfileSkills(profile.experience,catalog,aiProvider);
+    const proposalId=result.proposals.length?randomUUID():null;
+    if(proposalId)pendingProposals.set(user.key,{proposalId,skillIds:new Set(result.proposals.map(item=>item.skillId)),expires:Date.now()+10*60*1000});
+    json({...result,proposalId});return;
+   }
+   if(url.pathname==='/api/profile/skills' || url.pathname==='/api/profile/confirmations'){
+    const confirmation=url.pathname==='/api/profile/confirmations';
+    const pending=confirmation?pendingProposals.get(user.key):null;
+    if(confirmation && (data.confirmed!==true || !pending || pending.proposalId!==data.proposalId || pending.expires<Date.now()))throw problem(400,'Cette proposition a expiré. Demandez-en une nouvelle.');
+    const directions=await exploration.directions(),allowed=new Set(directions.flatMap(item=>item.requirements.map(skill=>skill.skillId)));
+    if(!Array.isArray(data.declarations) || data.declarations.length<1 || data.declarations.length>40)throw problem(400,'Choisissez une ou plusieurs compétences.');
+    const seen=new Set();
+    const declarations=data.declarations.map(item=>{
+     if(!item || typeof item.skillId!=='string' || !allowed.has(item.skillId) || (confirmation&&!pending.skillIds.has(item.skillId)) || seen.has(item.skillId) ||
+       !Number.isInteger(item.level) || item.level<0 || item.level>4)throw problem(400,'Compétence ou niveau invalide.');
+     seen.add(item.skillId);
+     const workExample=shortText(item.workExample??'',2000,'Exemple');
+     if(item.level>0 && workExample.length<5)throw problem(400,'Ajoutez un exemple concret d’au moins cinq caractères.');
+     return {skillId:item.skillId,level:item.level,workExample};
+    });
+    const client=await pool.connect();
+    try{await client.query('BEGIN');await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',[user.learnerId]);
+     for(const item of declarations){
+      const id=randomUUID();
+      await client.query(`INSERT INTO praxis.skill_evidence(id,learner_id,skill_id,level,evidence_type,confidence,provenance,observed_at)
+       VALUES ($1,$2,$3,$4,'self_declared','low',$5::jsonb,clock_timestamp())`,
+       [id,user.learnerId,item.skillId,item.level,JSON.stringify({source:confirmation?'confirmed_profile_proposal':'exploration_profile',workExample:item.workExample})]);
+      await client.query(`UPDATE praxis.skill_evidence SET superseded_by=$1 WHERE learner_id=$2 AND skill_id=$3
+       AND evidence_type='self_declared' AND superseded_by IS NULL AND id<>$1`,[id,user.learnerId,item.skillId]);
+     }
+     await client.query('COMMIT');
+    }catch(error){await client.query('ROLLBACK');throw error;}finally{client.release();}
+    if(confirmation)pendingProposals.delete(user.key);
+    json(await explorationResult(user));return;
+   }
+   if(url.pathname==='/api/explore'){json(await explorationResult(user));return;}
+   if(url.pathname==='/api/directions/compare'){
+    const result=await explorationResult(user);
+    if(!Array.isArray(data.ids) || data.ids.some(id=>typeof id!=='string'))throw problem(400,'Choisissez deux ou trois directions.');
+    json({directions:compareDirections(result.possibilities,data.ids),coverageNote:result.coverageNote});return;
+   }
+   if(url.pathname==='/api/exploration/saved'){
+    const result=await explorationResult(user);
+    if(typeof data.directionId!=='string' || !result.possibilities.some(item=>item.id===data.directionId) || typeof data.saved!=='boolean')throw problem(400,'Direction indisponible.');
+    await exploration.saveDirection(user.learnerId,data.directionId,data.saved);json({saved:await exploration.savedDirections(user.learnerId)});return;
+   }
+   if(url.pathname==='/api/development-actions/selected'){
+    const result=await explorationResult(user),direction=result.possibilities.find(item=>item.id===data.directionId);
+    if(!direction || !direction.startingActions.some(item=>item.id===data.actionId))throw problem(400,'Action indisponible.');
+    await exploration.selectAction(user.learnerId,direction.id,data.actionId);
+    json({selectedActions:await exploration.selectedActions(user.learnerId)});return;
+   }
+   if(url.pathname==='/api/feedback'){
+    if(typeof data.useful!=='boolean' || (data.directionId!==null && data.directionId!==undefined &&
+      !(await exploration.directions()).some(item=>item.id===data.directionId)))throw problem(400,'Retour invalide.');
+    await exploration.feedback(user.learnerId,data.directionId??null,data.useful,shortText(data.comment??'',1000,'Commentaire'));
+    json({recorded:true});return;
+   }
    if(url.pathname==='/api/impressions'){
     const entry=displayed.get(user.key)?.get(data.requestId);if(!entry)throw problem(400,'Ce résultat a expiré.');
     if(!entry.recorded){entry.recording??=ranker.recordImpression(entry.result,'learner_screen',example);try{await entry.recording;entry.recorded=true;}catch(error){entry.recording=null;throw error;}}json({recorded:true});return;
@@ -148,7 +234,15 @@ if(process.argv[1] && import.meta.url===pathToFileURL(process.argv[1]).href){
  if(!connectionString)throw new Error('Set DATABASE_URL to a migrated Praxis database before starting the learner screen.');
  const pool=new pg.Pool({connectionString,max:5}),port=Number(process.env.PRAXIS_LEARNER_PORT??4173);
  await pool.query('SELECT level FROM praxis.skill_evidence LIMIT 0');
- const server=createLearnerServer({pool,example:process.env.PRAXIS_LEARNER_EXAMPLE==='true',assessmentUrl:process.env.PRAXIS_ASSESSMENT_URL??null});
+ const aiEndpoint=process.env.PRAXIS_AI_ENDPOINT;
+ if(aiEndpoint && !/^https:\/\//.test(aiEndpoint))throw new Error('PRAXIS_AI_ENDPOINT must use HTTPS.');
+ const aiProvider=aiEndpoint?async request=>{
+  const response=await fetch(aiEndpoint,{method:'POST',headers:{'Content-Type':'application/json',
+   ...(process.env.PRAXIS_AI_TOKEN?{Authorization:`Bearer ${process.env.PRAXIS_AI_TOKEN}`}:{})},
+   body:JSON.stringify(request),signal:AbortSignal.timeout(4500)});
+  if(!response.ok)throw new Error('AI provider unavailable');return response.json();
+ }:null;
+ const server=createLearnerServer({pool,example:process.env.PRAXIS_LEARNER_EXAMPLE==='true',assessmentUrl:process.env.PRAXIS_ASSESSMENT_URL??null,aiProvider});
  server.listen(port,'127.0.0.1',()=>console.log(`Praxis learner screen: http://127.0.0.1:${port}`));
  async function stop(){await new Promise(resolve=>server.close(resolve));await pool.end();process.exit(0);}
  process.on('SIGTERM',stop);process.on('SIGINT',stop);

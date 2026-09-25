@@ -7,7 +7,8 @@ test('learner screen stores levels, recomputes recommendations and isolates brow
  const url=process.env.PRAXIS_LEARNER_TEST_DATABASE_URL;
  assert.ok(url,'Set PRAXIS_LEARNER_TEST_DATABASE_URL to a migrated dedicated *_test database');
  const pool=new pg.Pool({connectionString:url,max:5}),info=await pool.query('SELECT current_database() AS name');
- assert.ok(info.rows[0].name.endsWith('_test'));const server=createLearnerServer({pool,example:true});
+ assert.ok(info.rows[0].name.endsWith('_test'));const server=createLearnerServer({pool,example:true,
+  aiProvider:async request=>({proposals:[{skillId:request.allowedSkills[0].skillId,supportingText:'analyse de données',level:4}]})});
  await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin=`http://127.0.0.1:${server.address().port}`;
  const sessions=[];
  try{
@@ -16,7 +17,30 @@ test('learner screen stores levels, recomputes recommendations and isolates brow
   const id=first.data.goals.find(g=>g.id==='occupation_esco_d3edb8f83a0647a08fb99b212c006aa2')?.id??first.data.goals[0].id;
   const input={occupationId:id,constraints:{hoursPerWeek:8,budgetMad:500,languages:['fr']}};
   const send=async(session,path,body,headers={})=>fetch(`${origin}${path}`,{method:'POST',headers:{'Content-Type':'application/json',Origin:origin,Cookie:session.cookie,'X-Praxis-CSRF':session.data.csrf,...headers},body:JSON.stringify(body)});
-  const page=await fetch(origin);assert.equal(page.status,200);assert.match(await page.text(),/Votre prochain pas/);assert.match(page.headers.get('content-security-policy'),/frame-ancestors 'none'/);
+  const page=await fetch(origin);assert.equal(page.status,200);assert.match(await page.text(),/Plusieurs voies/);assert.match(page.headers.get('content-security-policy'),/frame-ancestors 'none'/);
+  const exploreEmpty=await (await send(first,'/api/explore',{})).json();
+  assert.ok(exploreEmpty.possibilities.length>=2,'Demo directions must be present independently of courses');
+  assert.ok(exploreEmpty.possibilities[0].requirements.some(r=>r.state==='unknown'));
+  assert.ok(exploreEmpty.questions.length>0);
+  const choice=exploreEmpty.possibilities[0],secondChoice=exploreEmpty.possibilities[1];
+  const profileResponse=await send(first,'/api/profile',{currentRoleId:null,experience:'J’ai préparé une analyse de données pour mon équipe.',interests:'données',constraints:'Temps limité'});
+  assert.equal(profileResponse.status,200);
+  const proposals=await (await send(first,'/api/profile/proposals',{})).json();
+  assert.equal(proposals.proposals.length,1);assert.equal(proposals.proposals[0].level,undefined);
+  assert.equal((await send(first,'/api/profile/confirmations',{proposalId:proposals.proposalId,confirmed:false,
+   declarations:[{skillId:proposals.proposals[0].skillId,level:4,workExample:'J’ai préparé une analyse.'}]})).status,400);
+  const compare=await (await send(first,'/api/directions/compare',{ids:[choice.id,secondChoice.id]})).json();
+  assert.equal(compare.directions.length,2);assert.deepEqual(compare.directions[0].requirements,choice.requirements);
+  assert.equal((await send(first,'/api/exploration/saved',{directionId:choice.id,saved:true})).status,200);
+  assert.equal((await send(first,'/api/development-actions/selected',{directionId:choice.id,actionId:choice.startingActions[0].id})).status,200);
+  const own=await (await send(first,'/api/explore',{})).json(),foreign=await (await send(other,'/api/explore',{})).json();
+  assert.ok(own.possibilities.find(d=>d.id===choice.id).saved);
+  assert.ok(own.selectedActions.includes(choice.startingActions[0].id));
+  assert.ok(!foreign.possibilities.find(d=>d.id===choice.id).saved);
+  assert.ok(!foreign.selectedActions.includes(choice.startingActions[0].id));
+  assert.equal(foreign.profile.experience,'');
+  assert.equal(own.evidence.selectedEvidence.length,0,'Selecting an action does not establish mastery');
+  assert.equal((await send(first,'/api/feedback',{directionId:choice.id,useful:true,comment:'Utile'})).status,200);
   assert.equal((await send(first,'/api/recommendations',input,{'X-Praxis-CSRF':'bad'})).status,403);
   assert.equal((await send(first,'/api/recommendations',input,{Origin:'https://evil.example'})).status,403);
   let response=await send(first,'/api/recommendations',input),before=await response.json();assert.equal(response.status,200);assert.equal(before.result.status,'insufficient_profile');

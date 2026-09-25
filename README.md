@@ -1,6 +1,6 @@
-# PRAXIS Compass — moteur autonome de compétences et de recommandation
+# PRAXIS — exploration professionnelle et développement des compétences
 
-PRAXIS Compass est un moteur TypeScript autonome qui transforme des preuves de compétences en parcours professionnels et pédagogiques explicables. Il combine un référentiel de métiers et de compétences fondé sur ESCO, un moteur de recommandation multi-critères, un planificateur de parcours, une gestion explicite de l’incertitude et plusieurs briques de recherche destinées à l’évaluation des compétences.
+PRAXIS est une application locale d’exploration professionnelle et un moteur TypeScript autonome. Le parcours apprenant permet de décrire son point de départ, explorer plusieurs directions, les comparer, comprendre les compétences à développer ou à clarifier, puis choisir une première action. Le moteur de recommandation de formations reste disponible comme composant optionnel.
 
 Le dépôt contient le cœur technique de PRAXIS, son schéma PostgreSQL, une interface locale pour apprenants, des simulations déterministes et les protocoles expérimentaux nécessaires pour évaluer le système avant un usage réel.
 
@@ -74,9 +74,11 @@ Praxis-Compass/
 │   ├── experiments/     # comparaison graphe/séquentielle gouvernée
 │   ├── engine/          # classement et planification des parcours
 │   ├── compass/         # exploration des mobilités professionnelles
+│   ├── exploration/     # directions, écarts et actions de développement
+│   ├── ai/              # propositions facultatives et validation
 │   └── index.ts         # API publique de la bibliothèque
 ├── database/
-│   ├── migrations/      # migrations numérotées jusqu’à 057
+│   ├── migrations/      # migrations numérotées jusqu’à 058
 │   ├── rollbacks/       # restaurations explicites disponibles
 │   └── migrate.ts       # exécuteur de migrations avec sommes de contrôle
 ├── learner/             # application web locale pour l’apprenant
@@ -171,13 +173,13 @@ npx tsx examples/demo-run.ts "gestionnaire de projet"
 
 ### Lancer l’interface apprenant
 
-Après migration de la base et définition de `DATABASE_URL` :
+Après migration de la base et configuration de `DATABASE_URL` dans `.env` :
 
 ```bash
 npm run learner
 ```
 
-Le guide [`docs/learner-screen.md`](docs/learner-screen.md) décrit le bootstrap de prévisualisation, les données fictives, l’isolation des navigateurs et les frontières de l’évaluation.
+Le guide [`docs/learner-screen.md`](docs/learner-screen.md) décrit le parcours d’exploration, le catalogue de démonstration, les API, l’assistance facultative et la vérification PostgreSQL.
 
 ## Utilisation de la bibliothèque
 

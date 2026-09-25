@@ -31,6 +31,12 @@ export * from './engine/learning-path-planner.js';
 export * from './engine/recommendation.repository.js';
 export * from './compass/career-compass.service.js';
 export * from './compass/career-compass.types.js';
+export * from './exploration/exploration.types.js';
+export * from './exploration/exploration.service.js';
+export * from './exploration/exploration.repository.js';
+export * from './exploration/skill-gap-analysis.js';
+export * from './exploration/development-actions.js';
+export * from './ai/profile-intake.js';
 
 export type PraxisEngineConfig = {
   connectionString?: string;
