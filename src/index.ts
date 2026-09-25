@@ -36,6 +36,16 @@ export * from './exploration/exploration.service.js';
 export * from './exploration/exploration.repository.js';
 export * from './exploration/skill-gap-analysis.js';
 export * from './exploration/development-actions.js';
+export * from './exploration/rome-exploration-source.js';
+export * from './exploration/rome-explorer.js';
+export * from './exploration/rome-explorer.types.js';
+export * from './exploration/requirements.js';
+export * from './exploration/possibilities.js';
+export * from './survey/survey-definition.js';
+export * from './survey/survey-engine.js';
+export * from './survey/context-validation.js';
+export * from './survey/context-survey.service.js';
+export * from './agents/agent-gateway.js';
 export * from './ai/profile-intake.js';
 
 export type PraxisEngineConfig = {
@@ -57,10 +67,8 @@ export class PraxisEngine {
   readonly planner: Pick<StandaloneRecommendationRepository, 'plan'>;
 
   constructor(config: PraxisEngineConfig = {}) {
-    const connectionString =
-      config.connectionString ??
-      process.env.DATABASE_URL ??
-      'postgresql://praxis_local:local_only_change_me@127.0.0.1:5432/praxis_local';
+    const connectionString = config.connectionString ?? process.env.DATABASE_URL;
+    if (!connectionString) throw new Error('Set DATABASE_URL to the standalone database');
 
     this.pool = new Pool({
       connectionString,

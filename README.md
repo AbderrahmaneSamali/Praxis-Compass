@@ -179,7 +179,7 @@ Après migration de la base et configuration de `DATABASE_URL` dans `.env` :
 npm run learner
 ```
 
-Le guide [`docs/learner-screen.md`](docs/learner-screen.md) décrit le parcours d’exploration, le catalogue de démonstration, les API, l’assistance facultative et la vérification PostgreSQL.
+Le guide [`docs/learner-screen.md`](docs/learner-screen.md) décrit le parcours d’exploration ROME, les confirmations directes, le questionnaire adaptatif de contexte, les API et la vérification PostgreSQL. Les migrations 059–062 et le chargement du supplément `RefRomeCsv.zip` sont nécessaires pour ce parcours.
 
 ## Utilisation de la bibliothèque
 

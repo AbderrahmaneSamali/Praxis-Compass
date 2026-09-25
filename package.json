@@ -17,11 +17,13 @@
     "cv:annotation": "node evaluation/cv-skills/annotation-workflow.mjs",
     "demo": "tsx examples/demo-run.ts",
     "migrate": "tsx database/migrate.ts",
+    "rome:exploration": "tsx database/ingest-rome-exploration.ts",
     "db:up": "docker compose -f docker-compose.db.yml up -d",
     "db:down": "docker compose -f docker-compose.db.yml down"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
+    "fflate": "^0.8.3",
     "pg": "^8.13.1"
   },
   "devDependencies": {

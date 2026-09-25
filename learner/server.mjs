@@ -4,7 +4,7 @@ import {randomBytes,randomUUID,createHash,timingSafeEqual} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 import pg from 'pg';
 import 'dotenv/config';
-import {StandaloneRecommendationRepository,ExplorationRepository,buildEvidenceProfile,exploreDirections,compareDirections,proposeProfileSkills,validateLearner} from '../dist/index.js';
+import {StandaloneRecommendationRepository,StandaloneRomeExplorer,ExplorationRepository,StandaloneContextSurvey,StandaloneAgentGateway,AgentGatewayInputError,SurveyAnswerError,SurveyNotFoundError,SurveyStateError,ContextValidationError,buildEvidenceProfile,exploreDirections,compareDirections,proposeProfileSkills,validateLearner} from '../dist/index.js';
 
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const equal=(a,b)=>typeof a==='string' && typeof b==='string' && a.length===b.length && timingSafeEqual(Buffer.from(a),Buffer.from(b));
@@ -13,7 +13,7 @@ const publicFolder=new URL('./public/',import.meta.url);
 const assets={'/':['index.html','text/html; charset=utf-8'],'/app.js':['app.js','text/javascript; charset=utf-8'],'/style.css':['style.css','text/css; charset=utf-8']};
 
 export function createLearnerServer({pool,example=false,assessmentUrl=null,aiProvider=null}){
- const ranker=new StandaloneRecommendationRepository(pool),exploration=new ExplorationRepository(pool),csrfTokens=new Map(),displayed=new Map(),pendingProposals=new Map();
+ const ranker=new StandaloneRecommendationRepository(pool),exploration=new ExplorationRepository(pool),rome=new StandaloneRomeExplorer(pool),survey=new StandaloneContextSurvey(pool),agentGateway=new StandaloneAgentGateway(pool),csrfTokens=new Map(),displayed=new Map(),pendingProposals=new Map();
  if(assessmentUrl && !/^https:\/\//.test(assessmentUrl))throw new TypeError('Assessment integration URL must use HTTPS');
  async function identity(req,res,create=false){
   const token=req.headers.cookie?.match(/(?:^|;\s*)praxis_session=([a-f0-9]{64})(?:;|$)/)?.[1];
@@ -57,11 +57,18 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null,aiPro
   return {result,assessmentConnected:Boolean(assessmentUrl),example};
  }
  async function explorationResult(user){
-  const [profile,directions,rows,saved,selectedActions]=await Promise.all([
-   exploration.profile(user.learnerId),exploration.directions(),ranker.skillEvidence(user.learnerId),
-   exploration.savedDirections(user.learnerId),exploration.selectedActions(user.learnerId)]);
+  const profile=await exploration.profile(user.learnerId);
+  const [directions,rows,saved,selectedActions,confirmations,context]=await Promise.all([
+   exploration.romeDirections(profile),ranker.skillEvidence(user.learnerId),
+   exploration.savedDirections(user.learnerId),exploration.selectedActions(user.learnerId),
+   exploration.romeConfirmations(user.learnerId),pool.query(`SELECT motivation,situation,hours_per_week,deadline::text
+     FROM praxis.learner_context WHERE learner_id=$1 AND superseded_by IS NULL
+       AND context_version='praxis-context-survey-v2' ORDER BY created_at DESC LIMIT 1`,[user.learnerId])]);
   const evidence=buildEvidenceProfile({learnerId:user.learnerId,constraints:{remoteOnly:true,hoursPerWeek:8}},rows);
-  return {...exploreDirections(profile,directions,evidence,saved),profile,selectedActions};
+  const contextRow=context.rows[0];
+  return {...exploreDirections(profile,directions,evidence,saved,confirmations),profile,selectedActions,
+   careerContext:contextRow?{motivation:contextRow.motivation,situation:contextRow.situation,
+    hoursPerWeek:contextRow.hours_per_week===null?null:Number(contextRow.hours_per_week),deadline:contextRow.deadline}:null};
  }
  function shortText(value,max,label){if(typeof value!=='string' || value.length>max)throw problem(400,`${label} invalide.`);return value.trim();}
  async function savePreferences(client,user,profile,prefs){
@@ -96,6 +103,17 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null,aiPro
    if(req.method==='GET' && url.pathname==='/api/profile'){
     const user=await identity(req,res);json({profile:await exploration.profile(user.learnerId),directions:await exploration.directions()});return;
    }
+   if(req.method==='GET' && url.pathname==='/api/rome/origins'){
+    await identity(req,res);const q=url.searchParams.get('q')??'';
+    if(q.length>100)throw problem(400,'Recherche trop longue.');
+    json({origins:await rome.searchOrigins(q,8)});return;
+   }
+   if(req.method==='GET' && url.pathname==='/api/rome/interests'){
+    await identity(req,res);json({interests:await rome.interestCentres()});return;
+   }
+   if(req.method==='GET' && url.pathname==='/api/context-survey/latest'){
+    const user=await identity(req,res);json({survey:await survey.latest(user.learnerId)});return;
+   }
    if(req.method==='GET' && /^\/api\/directions\/[^/]+$/.test(url.pathname)){
     const user=await identity(req,res),id=decodeURIComponent(url.pathname.split('/')[3]);
     const result=await explorationResult(user),direction=result.possibilities.find(item=>item.id===id);
@@ -105,9 +123,30 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null,aiPro
    const user=await identity(req,res);
    if(req.headers.origin!==`http://${req.headers.host}` || !equal(req.headers['x-praxis-csrf'],csrfTokens.get(user.key)))throw problem(403,'Rechargez la page avant d’envoyer ce formulaire.');
    const data=await body(req);
+   if(url.pathname==='/api/context-survey/start'){
+    const profile=await exploration.profile(user.learnerId);
+    json({survey:await survey.start({learnerId:user.learnerId,romeCode:profile.currentRomeCode??undefined})});return;
+   }
+   if(url.pathname==='/api/context-survey/answer'){
+    json({survey:await survey.answer(user.learnerId,data.sessionId,
+      {questionId:data.questionId,value:data.value,declined:data.declined})});return;
+   }
+   if(url.pathname==='/api/context-survey/back'){
+    json({survey:await survey.back(user.learnerId,data.sessionId)});return;
+   }
+   if(url.pathname==='/api/context-survey/complete'){
+    json({survey:await survey.complete(user.learnerId,data.sessionId)});return;
+   }
    if(url.pathname==='/api/profile'){
-    if(data.currentRoleId!==null && data.currentRoleId!==undefined && !((await exploration.directions()).some(item=>item.roleId===data.currentRoleId)))throw problem(400,'Métier actuel indisponible.');
-    const profile=await exploration.saveProfile({learnerId:user.learnerId,currentRoleId:data.currentRoleId??null,
+    if(data.currentRomeCode!==null && data.currentRomeCode!==undefined &&
+      (typeof data.currentRomeCode!=='string' || !(await rome.occupation(data.currentRomeCode))))throw problem(400,'Métier ROME indisponible.');
+    if(!Array.isArray(data.confirmedInterestCodes) || data.confirmedInterestCodes.length>30 ||
+      data.confirmedInterestCodes.some(code=>!Number.isInteger(code)) ||
+      new Set(data.confirmedInterestCodes).size!==data.confirmedInterestCodes.length)throw problem(400,'Centres d’intérêt invalides.');
+    const known=new Set((await rome.interestCentres()).map(item=>item.code));
+    if(data.confirmedInterestCodes.some(code=>!known.has(code)))throw problem(400,'Centre d’intérêt inconnu.');
+    const profile=await exploration.saveRomeProfile({learnerId:user.learnerId,currentRoleId:null,
+     currentRomeCode:data.currentRomeCode??null,confirmedInterestCodes:data.confirmedInterestCodes,
      experience:shortText(data.experience,4000,'Expérience'),interests:shortText(data.interests,1000,'Centres d’intérêt'),
      constraints:shortText(data.constraints,1000,'Contraintes'),updatedAt:null});
     pendingProposals.delete(user.key);
@@ -152,10 +191,30 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null,aiPro
     json(await explorationResult(user));return;
    }
    if(url.pathname==='/api/explore'){json(await explorationResult(user));return;}
+   if(url.pathname==='/api/agent-gateway/compare'){
+    if(Object.keys(data).some(key=>key!=='ids'))throw problem(400,'Formulaire de comparaison invalide.');
+    try{json(await agentGateway.compare(user.learnerId,data.ids,()=>explorationResult(user)));}
+    catch(error){if(error instanceof AgentGatewayInputError)throw problem(400,error.message);throw error;}
+    return;
+   }
+   if(url.pathname==='/api/rome/confirmations'){
+    const result=await explorationResult(user);
+    const direction=result.possibilities.find(item=>item.romeCode===data.codeRome);
+    if(!direction || typeof data.ogr!=='string' || !direction.requirements.some(item=>item.romeOgr===data.ogr) ||
+      !['practiced','not_yet','unsure'].includes(data.response))throw problem(400,'Exigence ROME indisponible.');
+    const workExample=shortText(data.workExample??'',2000,'Exemple');
+    if(data.response==='practiced' && workExample.length<5)throw problem(400,'Ajoutez un exemple concret.');
+    const occupation=await rome.occupation(direction.romeCode);
+    await exploration.confirmRomeRequirement(user.learnerId,data.ogr,occupation.releaseId,data.response,workExample);
+    json(await explorationResult(user));return;
+   }
    if(url.pathname==='/api/directions/compare'){
     const result=await explorationResult(user);
     if(!Array.isArray(data.ids) || data.ids.some(id=>typeof id!=='string'))throw problem(400,'Choisissez deux ou trois directions.');
-    json({directions:compareDirections(result.possibilities,data.ids),coverageNote:result.coverageNote});return;
+    const directions=compareDirections(result.possibilities,data.ids);
+    const requirementsComparison=directions.every(item=>item.romeCode)
+      ? (await rome.compare(directions.map(item=>item.romeCode))).requirements : null;
+    json({directions,requirementsComparison,coverageNote:result.coverageNote});return;
    }
    if(url.pathname==='/api/exploration/saved'){
     const result=await explorationResult(user);
@@ -163,14 +222,15 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null,aiPro
     await exploration.saveDirection(user.learnerId,data.directionId,data.saved);json({saved:await exploration.savedDirections(user.learnerId)});return;
    }
    if(url.pathname==='/api/development-actions/selected'){
-    const result=await explorationResult(user),direction=result.possibilities.find(item=>item.id===data.directionId);
-    if(!direction || !direction.startingActions.some(item=>item.id===data.actionId))throw problem(400,'Action indisponible.');
-    await exploration.selectAction(user.learnerId,direction.id,data.actionId);
+   const result=await explorationResult(user),direction=result.possibilities.find(item=>item.id===data.directionId);
+    const action=direction?.startingActions.find(item=>item.id===data.actionId);
+    if(!direction || !action)throw problem(400,'Action indisponible.');
+    await exploration.selectAction(user.learnerId,direction.id,action);
     json({selectedActions:await exploration.selectedActions(user.learnerId)});return;
    }
    if(url.pathname==='/api/feedback'){
     if(typeof data.useful!=='boolean' || (data.directionId!==null && data.directionId!==undefined &&
-      !(await exploration.directions()).some(item=>item.id===data.directionId)))throw problem(400,'Retour invalide.');
+      !(await explorationResult(user)).possibilities.some(item=>item.id===data.directionId)))throw problem(400,'Retour invalide.');
     await exploration.feedback(user.learnerId,data.directionId??null,data.useful,shortText(data.comment??'',1000,'Commentaire'));
     json({recorded:true});return;
    }
@@ -221,7 +281,9 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null,aiPro
     await client.query('COMMIT');
    }catch(error){await client.query('ROLLBACK');throw error;}finally{client.release();}
    json(await recommendation(user,profile.occupationId,prefs));
-  }catch(error){const status=error.status??(error instanceof TypeError || error instanceof RangeError?400:500);
+  }catch(error){const status=error.status??(error instanceof SurveyNotFoundError?404:
+   error instanceof SurveyAnswerError || error instanceof SurveyStateError || error instanceof ContextValidationError ||
+   error instanceof TypeError || error instanceof RangeError?400:500);
    if(status===500)console.error('Learner request failed:',error.message);
    json({error:status===500?'Le service est momentanément indisponible. Réessayez.':error.message},status);
   }

@@ -23,6 +23,8 @@ export const ALGORITHM_VERSIONS = Object.freeze({
   learnerSkillConfirmation: 'praxis-learner-skill-confirmation-v1',
   masteryRubric: 'praxis-mastery-rubric-v1',
   learnerContextCapture: 'praxis-learner-context-v3',
+  learnerContextSurvey: 'praxis-context-survey-v2',
+  agentGateway: 'praxis-agent-gateway-v1',
   cvExperienceInference: 'praxis-cv-experience-inference-v1',
   profileTargeting: 'navigator-profile-targeting-v0.1',
   recommendationWeights: 'navigator-recommendation-weights-v1',

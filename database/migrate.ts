@@ -67,9 +67,8 @@ export async function applyMigrationFile(
 }
 
 export async function runMigrations(): Promise<void> {
-  const connectionString =
-    process.env.DATABASE_URL ??
-    'postgresql://praxis_local:local_only_change_me@127.0.0.1:5432/praxis_local';
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) throw new Error('Set DATABASE_URL to the standalone database before migrating');
 
   const migrationDirectory = resolve(__dirname, 'migrations');
   const pool = new Pool({

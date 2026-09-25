@@ -7,7 +7,7 @@ export function analyzeRequirements(requirements: readonly RoleRequirement[], ev
   const disagreements = new Map(evidence.disagreements.map(item => [item.skillId,item.resolution]));
   return requirements.map(requirement => {
     const found = selected.get(requirement.skillId);
-    const state = conflicts.has(requirement.skillId) ? 'conflicting' : !found ? 'unknown'
+    const state = conflicts.has(requirement.skillId) ? 'conflicting' : !found || requirement.targetLevel === null ? 'unknown'
       : found.level >= requirement.targetLevel ? 'supported' : 'development_needed';
     return { ...requirement, state, observedLevel: found?.level ?? null,
       evidenceType: found?.evidenceType ?? null, evidenceStrength: found?.confidence ?? null,
