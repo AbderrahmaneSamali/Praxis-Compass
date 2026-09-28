@@ -1,6 +1,6 @@
 # Parcours d’exploration PRAXIS
 
-L’interface locale en français suit cinq étapes : point de départ, possibilités, comparaison, carte des exigences et premier pas. Les pistes viennent du domaine sélectionné, des mobilités ROME, des centres d’intérêt explicitement confirmés et des savoir-faire partagés. Sans domaine, métier ni intérêt confirmé, le profil reste utilisable mais aucune piste n’est inventée. La carte complète est alphabétique; la sélection courte affiche les raisons de son ordre, sans score de transition.
+L’interface locale en français suit six étapes : point de départ, possibilités, comparaison, examen d’une direction, plan de développement et rapport. Les pistes viennent du domaine sélectionné, des mobilités publiées par France Travail, des centres d’intérêt explicitement confirmés et des savoir-faire partagés. Sans domaine, métier ni intérêt confirmé, le profil reste utilisable mais aucune piste n’est inventée. La carte donne accès à tous les métiers du périmètre ; la sélection courte affiche les raisons de son ordre, sans score de compatibilité. Le métier de départ constitue un signal explicite de classement seulement lorsqu’il appartient au domaine choisi.
 
 Une confirmation directe d’une exigence avec contexte de pratique sélectionné est une **déclaration personnelle** de faible autorité. « Déjà pratiquée » donne l’état `supported`, « pas encore » donne `development_needed`, et l’absence de réponse reste `unknown`. Des déclarations actives contradictoires restent `conflicting`. ROME ne publie pas de niveau requis : aucun niveau de maîtrise ni score de compatibilité n’est déduit. Les preuves de compétences ESCO/PRAXIS ne sont pas converties en exigences ROME sans correspondance revue.
 
@@ -57,19 +57,28 @@ Après `GET /api/bootstrap` (création de session et jeton CSRF) :
 | `POST /api/activities/start` | Démarrer un exercice si ses prérequis explicites sont remplis |
 | `POST /api/activities/submit` | Enregistrer des réponses par identifiants de choix et recevoir les résultats par critère |
 | `GET /api/activities/attempts/:id` | Lire une tentative appartenant à cette session, même si sa version a été retirée |
+| `POST /api/career/preferences`, `GET /api/career/levels?codeRome=...` | Choisir pays/parcours et consulter les seuls référentiels revus applicables |
+| `POST /api/career/goal`, `POST /api/career/goal/clear` | Enregistrer ou retirer un objectif de niveau par métier et pays |
+| `POST /api/development-plan`, `POST /api/development-plan/replay` | Capturer un plan de développement et vérifier son rejeu |
+| `GET /api/development-plan/history?codeRome=...`, `GET /api/development-plan/cases/:id` | Consulter l’historique personnel des plans |
+| `POST /api/reports`, `POST /api/reports/verify` | Capturer un rapport complet et vérifier son intégrité |
+| `GET /api/reports/history`, `GET /api/reports/:id` | Consulter les rapports enregistrés de la session |
+| `GET /reports/:id`, `GET /api/reports/:id/pdf` | Exporter les mêmes faits enregistrés en HTML ou PDF |
+| `POST /api/agent-runs`, `POST /api/agent-runs/cancel` | Lancer ou annuler la lecture bornée d’un rapport par Gemma |
+| `GET /api/agent-runs/history`, `GET /api/agent-runs/:id` | Consulter l’état, les résultats validés et la trace des analyses |
 | `POST /api/feedback` | Donner un retour de compréhension et d’utilité |
 
 Les anciennes routes de recommandation et le catalogue éditorial restent disponibles séparément. Ils ne déterminent jamais les possibilités ROME affichées dans le parcours apprenant. Les actions choisies et les retours sont enregistrés dans des tables propres à ROME; ils ne créent aucune preuve de compétence.
 
 ## Passerelle de comparaison
 
-La carte interactive et le tableau exposent tous les métiers du périmètre, avec une pagination distincte de la sélection courte. Les profils et exigences sont chargés par lots. Les métiers dépliés restent visibles lors d’un changement de page; toutes leurs exigences sont accessibles par pagination et filtrage. Chaque lien est traçable à sa source. La progression par niveau est implémentée avec des référentiels séparés par pays, mais les quatre contenus pilotes restent des brouillons et sont donc masqués. L’orchestration IA reste à implémenter; voir `career-explorer-implementation.md` pour la suite et la décision de couvrir séparément la France et le Maroc.
+La carte interactive et le tableau exposent tous les métiers du périmètre, avec une pagination distincte de la sélection courte. Les profils et exigences sont chargés par lots. Les métiers dépliés restent visibles lors d’un changement de page ; toutes leurs exigences sont accessibles par pagination et filtrage. Chaque lien est traçable à sa source. La progression par niveau utilise des référentiels séparés par pays ; les quatre contenus pilotes restent des brouillons masqués. Le coordinateur NVIDIA est disponible sur les rapports enregistrés, selon la configuration du fournisseur. Voir [l’état de l’implémentation](career-explorer-implementation.md).
 
 La passerelle de lecture utilise la session apprenant du serveur. Elle accepte uniquement `{"ids":["rome:...","rome:..."]}` avec deux ou trois identifiants distincts présents dans les pistes calculées pour ce profil. Son enchaînement fixe lit les pistes, les états d’exigence, les sources officielles ou revues, puis le contexte de carrière. Il n’expose ni SQL libre ni outil général appelable depuis le navigateur. Une limite de quatre lectures et de dix secondes s’applique à chaque demande.
 
-La réponse contient des identifiants de source et des états, sans le texte libre du profil ni les exemples de travail. La migration 063 enregistre seulement l’identifiant apprenant, une empreinte des entrées, le résultat et les noms/durées des lectures. Une demande qui dépasse dix secondes est rejetée après la lecture en cours. Cette étape est déterministe : elle ne lance pas encore Gemma ni des spécialistes IA. Les pistes et les états continuent d’être calculés par le moteur existant.
+La réponse contient des identifiants de source et des états, sans le texte libre du profil ni les exemples de travail. La migration 063 enregistre seulement l’identifiant apprenant, une empreinte des entrées, le résultat et les noms/durées des lectures. Une demande qui dépasse dix secondes est rejetée après la lecture en cours. Cette passerelle de comparaison est déterministe et ne lance aucun modèle. Le coordinateur Gemma dispose de routes distinctes, décrites dans la section « Lecture assistée du rapport » ci-dessous. Les pistes et les états continuent d’être calculés par le moteur existant.
 
-## Assistance IA facultative
+## Propositions de compétences — intégration historique
 
 Le parcours par choix fonctionne sans fournisseur et n’affiche plus l’aide basée sur du texte libre. Les anciennes routes de proposition restent disponibles pour les intégrations existantes. Leur fournisseur peut être configuré par `PRAXIS_AI_ENDPOINT` et `PRAXIS_AI_TOKEN`; aucun appel à cette aide ne part du parcours apprenant actuel.
 
@@ -94,7 +103,7 @@ La migration 066 ajoute les choix France/Maroc et les parcours Expertise métier
 - `POST /api/career/goal` : `codeRome`, `frameworkId`, `trackCode`, `targetLevelCode`, `currentLevelCode` (facultatif via `null`). Les codes doivent appartenir au même référentiel, au pays choisi et au métier. Le niveau actuel reste une déclaration.
 - `POST /api/career/goal/clear` : `codeRome`, retire l’objectif de ce métier pour le pays choisi.
 
-Les brouillons et référentiels retirés ne sont jamais des choix apprenants. Une préférence de parcours ne crée pas d’équivalence entre expertise et management. Les objectifs sont conservés par métier et pays et ne créent aucune preuve de compétence. Les niveaux revus affichent un graphe de transitions explicites, un tableau accessible, les responsabilités, exigences, critères d’évaluation et sources. L’évaluation de préparation au niveau reste `not_assessed` ; le calcul des écarts détaillés appartient à l’étape suivante.
+Les brouillons et référentiels retirés ne sont jamais des choix apprenants. Une préférence de parcours ne crée pas d’équivalence entre expertise et management. Les objectifs sont conservés par métier et pays et ne créent aucune preuve de compétence. Les niveaux revus affichent un graphe de transitions explicites, un tableau accessible, les responsabilités, exigences, critères d’évaluation et sources. Le plan de développement calcule les écarts détaillés du métier et d’un éventuel objectif revu. L’évaluation de préparation au niveau reste `not_assessed`, car aucun service de validation des critères de niveau n’est connecté.
 
 `npm run career:drafts` importe les propositions sans les publier et exporte le [dossier de revue](career-level-framework-review.md). Avec `PRAXIS_LEARNER_TEST_DATABASE_URL` vers une base dédiée migrée et chargée, `npm run test:career-levels` vérifie publication, immutabilité, isolation des pays et objectifs. Les publications fictives des tests sont annulées par rollback.
 
@@ -103,7 +112,7 @@ Les brouillons et référentiels retirés ne sont jamais des choix apprenants. U
 
 La migration 067 et `npm run activities:pilots` installent six cas fictifs originaux, liés à cinq métiers pilotes de Banque/Finance. Ils sont proposés en France et au Maroc et clairement marqués « Exercice pilote ». Ils ne constituent ni des règles locales, ni des contenus revus par un spécialiste, ni une évaluation de niveau professionnel. Les référentiels de carrière restent en brouillon.
 
-Dans « Mon point de départ », choisir France ou Maroc. Ouvrir un métier couvert, par exemple Gestionnaire des opérations sur les marchés financiers, puis « Choisir un premier pas ». Les anciennes cartes génériques sont remplacées par les exercices disponibles pour ce métier. Pour un métier non couvert, le parcours affiche l'absence de contenu explicite.
+Dans « Mon point de départ », choisir France ou Maroc. Ouvrir un métier couvert, par exemple Gestionnaire des opérations sur les marchés financiers, puis « Mon plan de développement ». Les exercices disponibles sont reliés aux exigences et jalons de ce métier. Pour un métier non couvert, le parcours affiche l’absence de contenu explicite.
 
 Chaque exercice fournit son cas, ses étapes et ses critères. Le bouton de démarrage et les réponses sont bloqués tant qu’un prérequis est manquant ou inconnu. Les réponses sont uniquement des identifiants d’options issus de la base. Après envoi, le résultat détaille chaque critère et le retour pédagogique. Une réussite sur le cas préalable ouvre la suite nommée, dans le même métier et le même pays.
 
@@ -113,17 +122,17 @@ Chaque exercice fournit son cas, ses étapes et ses critères. Le bouton de dém
 - Les résultats sont `passed` ou `needs_practice`, toujours avec `evidenceKind: exercise_result` et `masteryEstablished: false`.
 - Une ancienne réussite du même exercice/version suffit au prérequis. Une nouvelle tentative imparfaite ne l’efface pas. Une version retirée cesse toutefois de remplir une condition d’entrée active.
 
-Les routes historiques de sélection restent compatibles avec les intégrations précédentes. Les nouvelles tentatives sont stockées séparément avec leur version, leur empreinte, l’état des prérequis au moment de l’envoi et les réponses normalisées. La correction ne fait aucun appel IA. Les agents futurs pourront lire ces faits via des outils bornés ; aucune exécution agentique n'est ajoutée dans cette étape.
+Les routes historiques de sélection restent compatibles avec les intégrations précédentes. Les nouvelles tentatives sont stockées séparément avec leur version, leur empreinte, l’état des prérequis au moment de l’envoi et les réponses normalisées. La correction ne fait aucun appel IA. Le coordinateur lit les faits capturés dans un rapport via ses outils bornés ; il ne corrige pas les exercices et n’attribue aucun résultat.
 
-## Development plan and replayable cases
+## Plan de développement et dossiers rejouables
 
-Step 05, **Mon plan de développement**, now generates a target-specific plan from saved database facts. It shows every requirement, practice declarations, recorded exercise outcomes, available exact-ID assessed evidence, explicit exercise dependencies and missing catalogue coverage. An unknown requirement is not treated as zero, and an exercise pass does not award professional mastery.
+L’étape 05, **Mon plan de développement**, génère un plan propre à la cible à partir des faits enregistrés en base. Elle montre toutes les exigences, les pratiques déclarées, les résultats d’exercices, les évaluations disponibles reliées par un identifiant exact, les dépendances explicites et les lacunes de couverture du catalogue. Une exigence inconnue reste inconnue ; réussir un cas ne confère pas la maîtrise professionnelle.
 
-Plans are captured in `development_plan_case` (migration 068), with source/version references, normalized input snapshots and input/output hashes. Identical inputs reuse the same case. Learners can inspect their older cases and verify a replay against the saved data. Historical cases are labelled and have no live action controls. An active source catalogue update does not rewrite saved cases.
+Les plans sont capturés dans `development_plan_case` (migration 068), avec les références des sources et versions, les entrées normalisées et les empreintes des entrées et résultats. Des entrées identiques réutilisent le même dossier. L’apprenant peut consulter les anciens dossiers et vérifier leur rejeu à partir des faits sauvegardés. Les dossiers historiques sont identifiés et ne proposent pas de commandes d’action actuelles. Une mise à jour du catalogue ne les réécrit pas.
 
-Career-level requirements appear only for a selected reviewed goal in the chosen country. The real France/Morocco framework proposals are still drafts. The current plan therefore includes occupation requirements and available pilot exercises, with an explicit unavailable message for career levels.
+Les exigences de niveau apparaissent uniquement pour un objectif revu sélectionné dans le pays choisi. Les propositions France/Maroc restent des brouillons. Le plan actuel inclut donc les exigences du métier et les exercices pilotes disponibles, avec un message explicite d’indisponibilité des niveaux de carrière.
 
-Run `npm run test:development-plan` with `PRAXIS_LEARNER_TEST_DATABASE_URL` set to a dedicated migrated/source-loaded `_test` database. The integration fixtures do not publish real framework drafts.
+Exécuter `npm run test:development-plan` avec `PRAXIS_LEARNER_TEST_DATABASE_URL` vers une base `_test` dédiée, migrée et chargée. Les fixtures d’intégration ne publient pas les vrais brouillons de référentiels.
 
 ## Rapport complet et PDF
 

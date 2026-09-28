@@ -1,12 +1,38 @@
 # PRAXIS — exploration professionnelle et développement des compétences
 
-PRAXIS est une application locale d’exploration professionnelle et un moteur TypeScript autonome. Le parcours apprenant permet de décrire son point de départ, explorer plusieurs directions, les comparer, comprendre les compétences à développer ou à clarifier, puis choisir une première action. Le moteur de recommandation de formations reste disponible comme composant optionnel.
+PRAXIS est une application locale d’exploration professionnelle et un moteur TypeScript autonome. Le parcours apprenant utilise des choix issus de PostgreSQL pour explorer tous les métiers d’un domaine, visualiser leurs compétences communes, comparer des pistes, construire un plan de développement et conserver un rapport détaillé en HTML ou PDF.
 
 Le dépôt contient le cœur technique de PRAXIS, son schéma PostgreSQL, une interface locale pour apprenants, des simulations déterministes et les protocoles expérimentaux nécessaires pour évaluer le système avant un usage réel.
 
 > **Statut : prototype de recherche avancé.** Les contrats, migrations et tests sont fonctionnels. Les modèles lexicaux fournis constituent des bases reproductibles, pas des modèles entraînés prêts pour la production. Les validations humaines, les audits de biais et les expérimentations prospectives restent obligatoires.
 
-## Ce que le système permet
+## Parcours apprenant disponible
+
+| Étape | Fonction |
+|---:|---|
+| 1 | Choisir un domaine, un métier actuel ou précédent, des intérêts, un pays et un parcours ; préciser sa situation par options |
+| 2 | Explorer tous les métiers du périmètre dans un graphe interactif et un tableau, avec exigences partagées, filtres et sources |
+| 3 | Comparer deux ou trois métiers et leurs exigences communes ou propres |
+| 4 | Examiner une direction, confirmer sa pratique et consulter les niveaux lorsqu’un référentiel revu couvre ce métier et ce pays |
+| 5 | Suivre les écarts, les prochains jalons et les exercices avec données, prérequis, réponses sélectionnables et critères |
+| 6 | Enregistrer un dossier complet pour une à trois cibles, consulter son historique et exporter le même contenu en HTML ou PDF |
+
+Le domaine sélectionné limite les candidats avant le classement. Le métier de départ apporte un signal explicite lorsqu’il appartient au domaine, après les intérêts et la pratique déclarée ; le graphe et l’annexe du rapport conservent l’ensemble des possibilités. Une pratique inconnue reste inconnue, et un exercice réussi ne devient pas une preuve de maîtrise professionnelle.
+
+Un coordinateur facultatif **NVIDIA / Gemma 4 31B IT** peut lire un rapport enregistré, proposer un ordre de consultation et ouvrir un prochain jalon disponible. Les requêtes d’outils JSON et tous les identifiants sont validés par PRAXIS. Chaque analyse est limitée à quatre appels au modèle, trois lectures du rapport et 60 secondes, avec annulation et trace des opérations. La clé `NVIDIA_API_KEY` reste côté serveur.
+
+### État de validation au 28 septembre 2026
+
+- Schéma jusqu’à la migration **070** ; plans et rapports immuables et vérifiables.
+- Six exercices pilotes de Banque/Finance, proposés séparément en France et au Maroc.
+- Quatre propositions de référentiels de carrière France/Maroc conservées en **brouillon**, sans niveau Senior/Lead/Staff publié aux apprenants.
+- Six parcours fictifs sur le vrai catalogue : **80/80 vérifications**, dont 22 contrôles de périmètre et d’isolation ; **2/2 parcours de progression**.
+- Suite unitaire : **160 tests réussis, 1 test d’archive source facultatif ignoré** ; compilation et vérification TypeScript réussies.
+- Les comparaisons NVIDIA réelles, la revue indépendante de l’utilité et l’élargissement des contenus restent à réaliser. Les agents spécialistes seront évalués lorsqu’un gain mesuré justifiera leur ajout.
+
+Voir [l’implémentation et ses limites](docs/career-explorer-implementation.md), [le guide apprenant](docs/learner-screen.md) et [le protocole d’évaluation des parcours](evaluation/career-journeys/README.md).
+
+## Composants complémentaires de la bibliothèque
 
 - explorer des mobilités professionnelles à partir des métiers et compétences ESCO ;
 - distinguer les compétences partagées des compétences-ponts à développer ;
@@ -25,26 +51,21 @@ Le dépôt contient le cœur technique de PRAXIS, son schéma PostgreSQL, une in
 
 ```mermaid
 flowchart LR
-    A[CV, déclarations et preuves] --> B[Extraction ESCO]
-    B --> C[Confirmation apprenant]
-    C --> D[Profil de compétences]
-    E[Évaluation adaptative IRT] --> D
-    D --> F[Écarts vers un métier cible]
-    G[Catalogue de formations] --> H[Moteur de recommandation]
-    F --> H
-    I[Contraintes apprenant] --> H
-    H --> J[Classement explicable]
-    H --> K[Parcours avec prérequis]
-    J --> L[Résultats et retours réels]
-    K --> L
-    L --> M[Évaluation contrôlée des modèles]
-    N[Marché du travail corrigé] --> F
-    O[Crosswalk de tâches] --> F
+    A[Choix du profil et du domaine] --> B[Catalogue PostgreSQL]
+    B --> C[Graphe complet et comparaison]
+    C --> D[Une à trois cibles]
+    E[Pratique déclarée et résultats de cas] --> F[Écarts et jalons disponibles]
+    D --> F
+    G[Exercices et référentiels revus applicables] --> F
+    F --> H[Plan de développement]
+    H --> I[Rapport immuable HTML et PDF]
+    I --> J[Coordinateur Gemma facultatif]
+    J --> K[Proposition validée et action disponible]
 ```
 
 Les composants d’IA proposent, classent ou estiment. Ils ne publient pas seuls une compétence, un item d’évaluation, un crosswalk ou un nouveau modèle en production.
 
-## Les huit chantiers de mise en œuvre
+## Composants de recherche et protocoles expérimentaux
 
 | Étape | Composant | Résultat actuel | Garde-fou principal |
 |---:|---|---|---|
@@ -76,13 +97,14 @@ Praxis-Compass/
 │   ├── compass/         # exploration des mobilités professionnelles
 │   ├── exploration/     # directions, écarts et actions de développement
 │   ├── ai/              # propositions facultatives et validation
+│   ├── agents/          # passerelle de lecture et coordinateur NVIDIA borné
 │   └── index.ts         # API publique de la bibliothèque
 ├── database/
-│   ├── migrations/      # migrations numérotées jusqu’à 058
+│   ├── migrations/      # migrations numérotées jusqu’à 070
 │   ├── rollbacks/       # restaurations explicites disponibles
 │   └── migrate.ts       # exécuteur de migrations avec sommes de contrôle
 ├── learner/             # application web locale pour l’apprenant
-├── evaluation/          # benchmark CV et workflow d’annotation
+├── evaluation/          # benchmark CV, annotation et évaluation des parcours
 ├── simulation/          # monde synthétique et oracle indépendant
 ├── tests/               # tests unitaires et d’intégration
 ├── examples/            # démonstration de l’API
@@ -146,6 +168,8 @@ npm run db:up
 npm run migrate
 ```
 
+La base visée par `DATABASE_URL` doit exister. Le fichier Compose crée `praxis_local`, tandis que `.env.example` vise la base autonome `praxis_standalone`. Une installation neuve doit également préparer les références ESCO/PRAXIS avant les migrations qui en dépendent, puis importer le catalogue de métiers et son supplément. L’ordre et les prérequis sont décrits dans [le guide d’installation](docs/learner-screen.md#démarrer) ; `npm run migrate` seul ne charge pas les taxonomies.
+
 Le runner mémorise les sommes de contrôle des migrations appliquées. Il ne faut pas modifier rétroactivement une migration déjà déployée : ajoutez une nouvelle migration corrective.
 
 ### Compiler et tester
@@ -179,7 +203,18 @@ Après migration de la base et configuration de `DATABASE_URL` dans `.env` :
 npm run learner
 ```
 
-Le guide [`docs/learner-screen.md`](docs/learner-screen.md) décrit le parcours d’exploration ROME, les confirmations directes, le questionnaire adaptatif de contexte, les API et la vérification PostgreSQL. Les migrations 059–062 et le chargement du supplément `RefRomeCsv.zip` sont nécessaires pour ce parcours.
+Ouvrir [http://127.0.0.1:4173/](http://127.0.0.1:4173/). Le serveur est prévu pour un usage local ; un déploiement public exige une configuration d’authentification, d’origine HTTPS et de cookies adaptée.
+
+Le guide [`docs/learner-screen.md`](docs/learner-screen.md) décrit les six étapes, le graphe, les confirmations, les niveaux, les exercices, les plans, les rapports et les API. Ce parcours requiert les migrations **001–070**, le catalogue ROME v61 de base et le supplément `RefRomeCsv.zip` correspondant à la version active.
+
+Pour préparer les contenus pilotes sur cette base :
+
+```bash
+npm run career:drafts
+npm run activities:pilots
+```
+
+Les référentiels restent des brouillons. Les exercices sont identifiés comme pilotes. Pour activer le coordinateur, définir `NVIDIA_API_KEY` dans `.env`, puis redémarrer le serveur. Sans clé, l’exploration, les exercices et les rapports restent disponibles.
 
 ## Utilisation de la bibliothèque
 
@@ -331,10 +366,20 @@ Un résultat positif autorise seulement l’examen d’un essai prospectif gouve
 | `npm test` | compilation et suite unitaire complète |
 | `npm run test:db` | requêtes et écritures sur une base PostgreSQL de test vide |
 | `npm run test:learner` | parcours de l’interface apprenant avec base dédiée |
+| `npm run test:career-levels` | cycle de revue, applicabilité des niveaux et isolation des pays |
+| `npm run test:activities` | cas pilotes, prérequis explicites et résultats structurés |
+| `npm run test:development-plan` | écarts, instantanés et rejeu des plans |
+| `npm run test:career-reports` | rapports immuables, exports HTML/PDF et isolation des sessions |
+| `npm run test:career-agent` | coordination bornée avec fournisseur simulé, annulation et validation |
+| `npm run evaluate:career-journeys` | six parcours fictifs sur le catalogue réel, sans appel NVIDIA |
 | `npm run simulate` | simulation déterministe avec oracle indépendant |
 | `npm run cv:benchmark` | évaluation du baseline lexical sur le pilote CV |
 
 Pour `test:db`, définissez `PRAXIS_TEST_DATABASE_URL` vers une **base vide dont le nom se termine par `_test`**. Le test refuse une base contenant déjà le schéma `praxis`.
+
+Pour les suites apprenant, niveaux, activités, plans, rapports et coordinateur, définir `PRAXIS_LEARNER_TEST_DATABASE_URL` vers une base dédiée `_test`, migrée et chargée avec le catalogue. L’évaluation des parcours utilise cette variable ; à défaut, elle reprend la connexion `DATABASE_URL` en visant `praxis_rome_test`. Elle vérifie le nom effectif avant toute écriture et efface les apprenants fictifs créés.
+
+`npm run evaluate:career-journeys -- --with-nvidia` ajoute deux comparaisons réelles, au plus huit appels au modèle, et prépare des dossiers A/B pour une revue indépendante. La clé est nécessaire. Les résultats du benchmark restent locaux dans `evaluation/career-journeys/out/`.
 
 ## Documentation technique
 
@@ -346,6 +391,10 @@ Pour `test:db`, définissez `PRAXIS_TEST_DATABASE_URL` vers une **base vide dont
 - [Propositions de crosswalk par réseaux de tâches](docs/task-network-crosswalk.md)
 - [Expériences graphe et séquentielles](docs/graph-sequential-recommender-experiments.md)
 - [Écran apprenant](docs/learner-screen.md)
+- [État de l’implémentation de l’exploration](docs/career-explorer-implementation.md)
+- [Référentiels de carrière en brouillon](docs/career-level-framework-review.md)
+- [Exercices pilotes et revue pédagogique](docs/development-activity-review.md)
+- [Évaluation des parcours France/Maroc](evaluation/career-journeys/README.md)
 - [Entretien adaptatif déterministe](ADAPTIVE_INTERVIEW.md)
 - [Simulation](simulation/README.md)
 
@@ -357,6 +406,10 @@ Pour `test:db`, définissez `PRAXIS_TEST_DATABASE_URL` vers une **base vide dont
 - L’analyse du fonctionnement différentiel des items (DIF) par langue et groupe reste indispensable.
 - Les corrections statistiques réduisent certains biais des annonces en ligne sans éliminer les biais de sélection résiduels.
 - Les recommandations dépendent de la qualité du catalogue, des preuves apprenant et des correspondances taxonomiques.
+- Les fiches métiers proviennent de France Travail ; le pays choisi ne transforme pas ces fiches en validation locale marocaine.
+- La couverture des exercices est limitée aux métiers pilotes de Banque/Finance ; les autres métiers peuvent être explorés, avec une absence de contenu explicitement indiquée.
+- Les référentiels de niveaux restent en brouillon et aucune équivalence France/Maroc ou expertise/management n’est déduite.
+- Les vérifications de parcours portent sur des cas fictifs ; elles ne démontrent pas encore un gain d’utilité de Gemma ou d’agents spécialistes pour des personnes réelles.
 - Le schéma fournit des garde-fous techniques ; l’application hôte reste responsable du consentement, de l’accès, de la rétention et de la conformité réglementaire.
 
 ## Sécurité et données

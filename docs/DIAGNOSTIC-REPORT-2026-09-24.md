@@ -2,6 +2,8 @@
 
 Date: 24 September 2026. Scope: the `praxis-engine-standalone` repository in this workspace. This does not certify another application, the sibling PRE-PRAXIS repository, or a deployed service.
 
+> Historical assessment of the repository on 24 September 2026. Subsequent career-exploration work, database recovery, reports, coordination and journey evaluation are documented in the [current README](../README.md) and [implementation status](career-explorer-implementation.md). The observations below retain their original date and scope.
+
 **Executive assessment**
 
 PRAXIS has a substantial, tested recommendation and evidence engine, but its learner product remains a local preview. The fastest route to a useful MVP is to connect one narrow learner journey to a small, verified course catalog, reduce onboarding friction, and collect real feedback. Expanding the research architecture is unlikely to be the critical path.
