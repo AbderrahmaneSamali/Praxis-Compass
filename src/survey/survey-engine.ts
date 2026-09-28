@@ -209,11 +209,12 @@ export function normalizeAnswer(
     };
   }
 
+  if (question.id === 'hours_per_week' && typeof raw.value === 'number') raw = {...raw,value:String(raw.value)};
   const free = question.freeInput?.(state) ?? null;
   if (typeof raw.value === 'string' && allowed.has(raw.value)) {
     // A numeric preset is stored as the number it stands for.
     const value =
-      free?.kind === 'number' && /^\d+(\.\d+)?$/.test(raw.value)
+      question.id === 'hours_per_week' && /^\d+(\.\d+)?$/.test(raw.value)
         ? Number(raw.value)
         : raw.value;
     return { value, declined: false, source };
@@ -472,8 +473,7 @@ export function toContextFields(resolved: ResolvedSurvey): SurveyContextFields {
   const deadline = effectiveDeadline(state);
   if (deadline) fields.deadline = deadline;
 
-  const example = text(state, 'recent_work_example');
-  if (example) fields.recentWorkExample = example;
+
 
   const declined = new Set<DeclinableField>();
   for (const question of SURVEY_QUESTIONS) {

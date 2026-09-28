@@ -1,3 +1,4 @@
+export { loadLearnerChoices, type LearnerChoiceCatalog } from './exploration/learner-choices.js';
 import { Pool } from 'pg';
 import { StandaloneCareerCompass } from './compass/career-compass.service.js';
 import { StandaloneRecommendationRepository } from './engine/recommendation.repository.js';
@@ -33,6 +34,10 @@ export * from './compass/career-compass.service.js';
 export * from './compass/career-compass.types.js';
 export * from './exploration/exploration.types.js';
 export * from './exploration/exploration.service.js';
+export * from './exploration/direction-recommendations.js';
+export * from './exploration/career-graph.js';
+export * from './exploration/career-levels.js';
+export * from './exploration/activities.js';
 export * from './exploration/exploration.repository.js';
 export * from './exploration/skill-gap-analysis.js';
 export * from './exploration/development-actions.js';
@@ -46,6 +51,9 @@ export * from './survey/survey-engine.js';
 export * from './survey/context-validation.js';
 export * from './survey/context-survey.service.js';
 export * from './agents/agent-gateway.js';
+export * from './agents/career-agent.js';
+export * from './agents/career-agent.repository.js';
+export * from './agents/nvidia-provider.js';
 export * from './ai/profile-intake.js';
 
 export type PraxisEngineConfig = {
@@ -91,3 +99,10 @@ export class PraxisEngine {
     await this.pool.end();
   }
 }
+
+export * from './exploration/development-plan.js';
+export * from './exploration/development-plan.repository.js';
+
+export * from './exploration/career-report.js';
+export * from './exploration/career-report.repository.js';
+export * from './exploration/career-report.render.js';

@@ -4,15 +4,28 @@ import {randomBytes,randomUUID,createHash,timingSafeEqual} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 import pg from 'pg';
 import 'dotenv/config';
-import {StandaloneRecommendationRepository,StandaloneRomeExplorer,ExplorationRepository,StandaloneContextSurvey,StandaloneAgentGateway,AgentGatewayInputError,SurveyAnswerError,SurveyNotFoundError,SurveyStateError,ContextValidationError,buildEvidenceProfile,exploreDirections,compareDirections,proposeProfileSkills,validateLearner} from '../dist/index.js';
+import {buildCareerGraph,CareerGraphInputError} from '../dist/exploration/career-graph.js';
+import {CareerLevelRepository,CareerLevelInputError} from '../dist/exploration/career-levels.js';
+import {DevelopmentActivityRepository,ActivityInputError} from '../dist/exploration/activities.js';
+import {DevelopmentPlanRepository} from '../dist/exploration/development-plan.repository.js';
+import {CareerReportRepository} from '../dist/exploration/career-report.repository.js';
+import {verifyCareerReport} from '../dist/exploration/career-report.js';
+import {renderCareerReportHtml,renderCareerReportPdf} from '../dist/exploration/career-report.render.js';
+import {CareerAgentRepository,nvidiaProvider} from '../dist/index.js';
+import {loadLearnerChoices,StandaloneRecommendationRepository,StandaloneRomeExplorer,ExplorationRepository,StandaloneContextSurvey,StandaloneAgentGateway,AgentGatewayInputError,SurveyAnswerError,SurveyNotFoundError,SurveyStateError,ContextValidationError,buildEvidenceProfile,exploreDirections,recommendDirections,compareDirections,proposeProfileSkills,validateLearner} from '../dist/index.js';
 
 const hash=value=>createHash('sha256').update(value).digest('hex');
 const equal=(a,b)=>typeof a==='string' && typeof b==='string' && a.length===b.length && timingSafeEqual(Buffer.from(a),Buffer.from(b));
 const problem=(status,message)=>Object.assign(new Error(message),{status});
 const publicFolder=new URL('./public/',import.meta.url);
-const assets={'/':['index.html','text/html; charset=utf-8'],'/app.js':['app.js','text/javascript; charset=utf-8'],'/style.css':['style.css','text/css; charset=utf-8']};
+const assets={'/career-agent.js':['career-agent.js','text/javascript; charset=utf-8'],'/career-agent.css':['career-agent.css','text/css; charset=utf-8'],'/career-reports.js':['career-reports.js','text/javascript; charset=utf-8'],'/career-reports.css':['career-reports.css','text/css; charset=utf-8'],'/report-document.css':['report-document.css','text/css; charset=utf-8'],'/report-document.js':['report-document.js','text/javascript; charset=utf-8'],'/development-plan.js':['development-plan.js','text/javascript; charset=utf-8'],'/development-plan.css':['development-plan.css','text/css; charset=utf-8'],'/':['index.html','text/html; charset=utf-8'],'/app.js':['app.js','text/javascript; charset=utf-8'],'/style.css':['style.css','text/css; charset=utf-8'],'/career-map.js':['career-map.js','text/javascript; charset=utf-8'],'/career-map.css':['career-map.css','text/css; charset=utf-8'],'/career-levels.js':['career-levels.js','text/javascript; charset=utf-8'],'/career-levels.css':['career-levels.css','text/css; charset=utf-8'],'/development-activities.js':['development-activities.js','text/javascript; charset=utf-8'],'/development-activities.css':['development-activities.css','text/css; charset=utf-8']};
 
-export function createLearnerServer({pool,example=false,assessmentUrl=null,aiProvider=null}){
+export function createLearnerServer({pool,example=false,assessmentUrl=null,aiProvider=null,agentProvider=null}){
+ const careerLevels=new CareerLevelRepository(pool);
+ const activities=new DevelopmentActivityRepository(pool);
+ const developmentPlans=new DevelopmentPlanRepository(pool);
+ const reports=new CareerReportRepository(pool);
+ const careerAgents=new CareerAgentRepository(pool,agentProvider);
  const ranker=new StandaloneRecommendationRepository(pool),exploration=new ExplorationRepository(pool),rome=new StandaloneRomeExplorer(pool),survey=new StandaloneContextSurvey(pool),agentGateway=new StandaloneAgentGateway(pool),csrfTokens=new Map(),displayed=new Map(),pendingProposals=new Map();
  if(assessmentUrl && !/^https:\/\//.test(assessmentUrl))throw new TypeError('Assessment integration URL must use HTTPS');
  async function identity(req,res,create=false){
@@ -63,14 +76,25 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null,aiPro
    exploration.savedDirections(user.learnerId),exploration.selectedActions(user.learnerId),
    exploration.romeConfirmations(user.learnerId),pool.query(`SELECT motivation,situation,hours_per_week,deadline::text
      FROM praxis.learner_context WHERE learner_id=$1 AND superseded_by IS NULL
-       AND context_version='praxis-context-survey-v2' ORDER BY created_at DESC LIMIT 1`,[user.learnerId])]);
+       AND context_version IN ('praxis-context-survey-v2','praxis-context-survey-v3') ORDER BY created_at DESC LIMIT 1`,[user.learnerId])]);
   const evidence=buildEvidenceProfile({learnerId:user.learnerId,constraints:{remoteOnly:true,hoursPerWeek:8}},rows);
   const contextRow=context.rows[0];
-  return {...exploreDirections(profile,directions,evidence,saved,confirmations),profile,selectedActions,
+  const result=exploreDirections(profile,directions,evidence,saved,confirmations);
+  const [preference,catalog]=await Promise.all([careerLevels.preference(user.learnerId),careerLevels.catalog()]);
+  const coverage=await careerLevels.coverage(result.possibilities.flatMap(item=>item.romeCode?[item.romeCode]:[]),preference);
+  return {...result,careerLevels:{preference,catalog,coverage},graph:buildCareerGraph(profile,result.possibilities,{},coverage),recommendations:recommendDirections(profile,result.possibilities,6),profile,selectedActions,
    careerContext:contextRow?{motivation:contextRow.motivation,situation:contextRow.situation,
     hoursPerWeek:contextRow.hours_per_week===null?null:Number(contextRow.hours_per_week),deadline:contextRow.deadline}:null};
  }
  function shortText(value,max,label){if(typeof value!=='string' || value.length>max)throw problem(400,`${label} invalide.`);return value.trim();}
+ async function choice(group,id,required=false){
+  if((id===null || id===undefined || id==='') && !required)return null;
+  if(typeof id!=='string')throw problem(400,'Choisissez une option proposée.');
+  const found=await pool.query('SELECT id FROM praxis.learner_choice WHERE group_id=$1 AND id=$2 AND active',[group,id]);
+  if(!found.rowCount)throw problem(400,'Choisissez une option proposée.');
+  return id;
+ }
+ function fields(data,allowed){if(Object.keys(data).some(key=>!allowed.includes(key)))throw problem(400,'Utilisez uniquement les choix proposés.');}
  async function savePreferences(client,user,profile,prefs){
     const contextId=randomUUID();
     await client.query(`INSERT INTO praxis.learner_context(id,learner_id,context_version,goal_kind,goal_text,hours_per_week,
@@ -100,8 +124,59 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null,aiPro
     const s=saved.rows[0],prefs=s?{hoursPerWeek:Number(s.hours_per_week??8),...(s.budget_max_mad===null?{}:{budgetMad:Number(s.budget_max_mad)}),...(s.languages?.length?{languages:s.languages}:{}),...(s.online_format?{onlineFormat:s.online_format}:{})}:{hoursPerWeek:8,languages:['fr']};
     json({csrf,goals:goals.rows,occupationId:s?.goal_text??goals.rows[0]?.id??null,constraints:prefs,example,assessmentConnected:Boolean(assessmentUrl)});return;
    }
+   if(req.method==='GET' && url.pathname==='/api/reports/history'){
+    const user=await identity(req,res);json(await reports.history(user.learnerId,Number(url.searchParams.get('offset')??0)));return;
+   }
+   if(req.method==='GET' && url.pathname==='/api/agent-runs/history'){
+    const user=await identity(req,res);json(await careerAgents.history(user.learnerId,Number(url.searchParams.get('offset')??0)));return;
+   }
+   if(req.method==='GET' && /^\/api\/agent-runs\/[0-9a-f-]{36}$/i.test(url.pathname)){
+    const user=await identity(req,res);json(await careerAgents.read(user.learnerId,url.pathname.split('/')[3]));return;
+   }
+   if(req.method==='GET' && /^\/(?:api\/reports|reports)\/[0-9a-f-]{36}(?:\/pdf)?$/i.test(url.pathname)){
+    const user=await identity(req,res),parts=url.pathname.split('/'),id=parts[1]==='api'?parts[3]:parts[2];
+    const report=await reports.read(user.learnerId,id);
+    if(url.pathname.endsWith('/pdf')){const pdf=await renderCareerReportPdf(report);res.writeHead(200,{'Content-Type':'application/pdf','Content-Length':pdf.length,'Content-Disposition':`attachment; filename="praxis-rapport-${report.id}.pdf"`});res.end(Buffer.from(pdf));return;}
+    if(parts[1]==='reports'){const html=renderCareerReportHtml(report);res.writeHead(200,{'Content-Type':'text/html; charset=utf-8'});res.end(html);return;}
+    json(report);return;
+   }
+   if(req.method==='GET' && url.pathname==='/api/development-plan/history'){
+    const user=await identity(req,res);json(await developmentPlans.history(user.learnerId,url.searchParams.get('codeRome')??'',Number(url.searchParams.get('offset')??0)));return;
+   }
+   if(req.method==='GET' && /^\/api\/development-plan\/cases\/[^/]+$/.test(url.pathname)){
+    const user=await identity(req,res);json(await developmentPlans.read(user.learnerId,url.pathname.split('/')[4]));return;
+   }
+   if(req.method==='GET' && url.pathname==='/api/activities'){
+    const user=await identity(req,res),code=url.searchParams.get('codeRome');
+    if(!/^[A-Z][0-9]{4}$/.test(code??''))throw problem(400,'Choisissez un métier proposé.');
+    if(!(await explorationResult(user)).possibilities.some(item=>item.romeCode===code))throw problem(404,'Métier indisponible dans votre exploration.');
+    json(await activities.forOccupation(user.learnerId,code));return;
+   }
+   if(req.method==='GET' && /^\/api\/activities\/attempts\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(url.pathname)){
+    const user=await identity(req,res);json(await activities.attempt(user.learnerId,url.pathname.split('/')[4]));return;
+   }
+   if(req.method==='GET' && url.pathname==='/api/career/levels'){
+    const user=await identity(req,res),code=url.searchParams.get('codeRome');
+    if(!/^[A-Z][0-9]{4}$/.test(code??''))throw problem(400,'Choisissez un métier proposé.');
+    const result=await explorationResult(user);
+    if(!result.possibilities.some(item=>item.romeCode===code))throw problem(404,'Métier indisponible dans votre exploration.');
+    json(await careerLevels.forOccupation(user.learnerId,code));return;
+   }
    if(req.method==='GET' && url.pathname==='/api/profile'){
     const user=await identity(req,res);json({profile:await exploration.profile(user.learnerId),directions:await exploration.directions()});return;
+   }
+   if(req.method==='GET' && url.pathname==='/api/learner-choices'){
+    await identity(req,res);json({choices:await loadLearnerChoices(pool)});return;
+   }
+   if(req.method==='GET' && url.pathname==='/api/occupation-choices'){
+    await identity(req,res);
+    const occupations=await pool.query(`SELECT v.code_rome AS code,v.preferred_label AS label,
+      coalesce(jsonb_agg(DISTINCT jsonb_build_object('code',d.domain_code,'label',dv.domain_label)) FILTER (WHERE d.domain_code IS NOT NULL),'[]') AS domains
+      FROM praxis.rome_occupation_versions v JOIN praxis.source_releases r ON r.id=v.release_id AND r.source='rome' AND r.is_active
+      LEFT JOIN praxis.rome_occupation_professional_domains d ON d.release_id=v.release_id AND d.code_rome=v.code_rome
+      LEFT JOIN praxis.rome_professional_domain_versions dv ON dv.release_id=d.release_id AND dv.domain_code=d.domain_code
+      GROUP BY v.code_rome,v.preferred_label ORDER BY v.preferred_label,v.code_rome`);
+    json({occupations:occupations.rows});return;
    }
    if(req.method==='GET' && url.pathname==='/api/rome/origins'){
     await identity(req,res);const q=url.searchParams.get('q')??'';
@@ -123,6 +198,54 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null,aiPro
    const user=await identity(req,res);
    if(req.headers.origin!==`http://${req.headers.host}` || !equal(req.headers['x-praxis-csrf'],csrfTokens.get(user.key)))throw problem(403,'Rechargez la page avant d’envoyer ce formulaire.');
    const data=await body(req);
+   if(url.pathname==='/api/reports'){
+    fields(data,['targetCodes']);const report=await reports.create(user.learnerId,data.targetCodes);json(report);return;
+   }
+   if(url.pathname==='/api/reports/verify'){
+    fields(data,['reportId']);if(typeof data.reportId!=='string')throw problem(400,'Choisissez un rapport enregistré.');
+    json(verifyCareerReport(await reports.read(user.learnerId,data.reportId)));return;
+   }
+   if(url.pathname==='/api/agent-runs'){
+    fields(data,['reportId']);json(await careerAgents.create(user.learnerId,data.reportId),202);return;
+   }
+   if(url.pathname==='/api/agent-runs/cancel'){
+    fields(data,['runId']);json(await careerAgents.cancel(user.learnerId,data.runId));return;
+   }
+   if(url.pathname==='/api/development-plan'){
+    fields(data,['codeRome']);json(await developmentPlans.create(user.learnerId,data.codeRome));return;
+   }
+   if(url.pathname==='/api/development-plan/replay'){
+    fields(data,['caseId']);if(typeof data.caseId!=='string')throw problem(400,'Choisissez un dossier enregistré.');
+    json(await developmentPlans.replay(user.learnerId,data.caseId));return;
+   }
+   if(url.pathname==='/api/activities/start'||url.pathname==='/api/activities/submit'){
+    const submit=url.pathname.endsWith('/submit');
+    fields(data,submit?['codeRome','marketCode','activityId','requestKey','answers']:['codeRome','marketCode','activityId']);
+    if(typeof data.codeRome!=='string'||!/^[A-Z][0-9]{4}$/.test(data.codeRome)||typeof data.activityId!=='string'||data.activityId.length>160||typeof data.marketCode!=='string')throw problem(400,'Choisissez un exercice proposé.');
+    if(!(await explorationResult(user)).possibilities.some(item=>item.romeCode===data.codeRome))throw problem(400,'Métier indisponible dans votre exploration.');
+    json(submit?await activities.submit(user.learnerId,data):await activities.start(user.learnerId,data.codeRome,data.activityId,data.marketCode));return;
+   }
+   if(url.pathname==='/api/career/preferences'){
+    fields(data,['marketCode','trackCode']);
+    json({preference:await careerLevels.savePreference(user.learnerId,{marketCode:data.marketCode,trackCode:data.trackCode})});return;
+   }
+   if(url.pathname==='/api/career/goal'||url.pathname==='/api/career/goal/clear'){
+    const clear=url.pathname.endsWith('/clear');
+    fields(data,clear?['codeRome']:['codeRome','frameworkId','trackCode','targetLevelCode','currentLevelCode']);
+    if(typeof data.codeRome!=='string'||!/^[A-Z][0-9]{4}$/.test(data.codeRome))throw problem(400,'Choisissez un métier proposé.');
+    const result=await explorationResult(user);
+    if(!result.possibilities.some(item=>item.romeCode===data.codeRome))throw problem(400,'Métier indisponible dans votre exploration.');
+    if(clear){json(await careerLevels.clearGoal(user.learnerId,data.codeRome));return;}
+    if(['frameworkId','trackCode','targetLevelCode'].some(key=>typeof data[key]!=='string'||data[key].length>160)||
+      (data.currentLevelCode!==null&&typeof data.currentLevelCode!=='string'))throw problem(400,'Choisissez les niveaux proposés.');
+    json(await careerLevels.saveGoal(user.learnerId,data.codeRome,{frameworkId:data.frameworkId,trackCode:data.trackCode,targetLevelCode:data.targetLevelCode,currentLevelCode:data.currentLevelCode}));return;
+   }
+   if(url.pathname==='/api/session/reset'){
+    fields(data,[]);
+    csrfTokens.delete(user.key);displayed.delete(user.key);pendingProposals.delete(user.key);
+    res.setHeader('Set-Cookie','praxis_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0');
+    json({reset:true});return;
+   }
    if(url.pathname==='/api/context-survey/start'){
     const profile=await exploration.profile(user.learnerId);
     json({survey:await survey.start({learnerId:user.learnerId,romeCode:profile.currentRomeCode??undefined})});return;
@@ -138,17 +261,27 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null,aiPro
     json({survey:await survey.complete(user.learnerId,data.sessionId)});return;
    }
    if(url.pathname==='/api/profile'){
+    fields(data,['currentRomeCode','confirmedInterestCodes','preferredDomainCode']);
+    const previous=await exploration.profile(user.learnerId);
+    const preferredDomainCode=data.preferredDomainCode===undefined ? previous.preferredDomainCode : data.preferredDomainCode;
+    if(preferredDomainCode!==null && preferredDomainCode!==undefined){
+      if(typeof preferredDomainCode!=='string')throw problem(400,'Domaine indisponible.');
+      const available=await pool.query(`SELECT 1 FROM praxis.rome_professional_domain_versions d
+        JOIN praxis.source_releases r ON r.id=d.release_id AND r.source='rome' AND r.is_active
+        WHERE d.domain_code=$1`,[preferredDomainCode]);
+      if(!available.rowCount)throw problem(400,'Domaine indisponible.');
+    }
     if(data.currentRomeCode!==null && data.currentRomeCode!==undefined &&
-      (typeof data.currentRomeCode!=='string' || !(await rome.occupation(data.currentRomeCode))))throw problem(400,'Métier ROME indisponible.');
+      (typeof data.currentRomeCode!=='string' || !(await rome.occupation(data.currentRomeCode))))throw problem(400,'Métier indisponible.');
     if(!Array.isArray(data.confirmedInterestCodes) || data.confirmedInterestCodes.length>30 ||
       data.confirmedInterestCodes.some(code=>!Number.isInteger(code)) ||
       new Set(data.confirmedInterestCodes).size!==data.confirmedInterestCodes.length)throw problem(400,'Centres d’intérêt invalides.');
     const known=new Set((await rome.interestCentres()).map(item=>item.code));
     if(data.confirmedInterestCodes.some(code=>!known.has(code)))throw problem(400,'Centre d’intérêt inconnu.');
     const profile=await exploration.saveRomeProfile({learnerId:user.learnerId,currentRoleId:null,
-     currentRomeCode:data.currentRomeCode??null,confirmedInterestCodes:data.confirmedInterestCodes,
-     experience:shortText(data.experience,4000,'Expérience'),interests:shortText(data.interests,1000,'Centres d’intérêt'),
-     constraints:shortText(data.constraints,1000,'Contraintes'),updatedAt:null});
+     currentRomeCode:data.currentRomeCode??null,preferredDomainCode:preferredDomainCode??null,confirmedInterestCodes:data.confirmedInterestCodes,
+     experience:previous.experience,interests:previous.interests,
+     constraints:previous.constraints,updatedAt:null});
     pendingProposals.delete(user.key);
     json({profile});return;
    }
@@ -167,21 +300,22 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null,aiPro
     const directions=await exploration.directions(),allowed=new Set(directions.flatMap(item=>item.requirements.map(skill=>skill.skillId)));
     if(!Array.isArray(data.declarations) || data.declarations.length<1 || data.declarations.length>40)throw problem(400,'Choisissez une ou plusieurs compétences.');
     const seen=new Set();
-    const declarations=data.declarations.map(item=>{
+    const declarations=await Promise.all(data.declarations.map(async item=>{
      if(!item || typeof item.skillId!=='string' || !allowed.has(item.skillId) || (confirmation&&!pending.skillIds.has(item.skillId)) || seen.has(item.skillId) ||
        !Number.isInteger(item.level) || item.level<0 || item.level>4)throw problem(400,'Compétence ou niveau invalide.');
      seen.add(item.skillId);
-     const workExample=shortText(item.workExample??'',2000,'Exemple');
-     if(item.level>0 && workExample.length<5)throw problem(400,'Ajoutez un exemple concret d’au moins cinq caractères.');
-     return {skillId:item.skillId,level:item.level,workExample};
-    });
+     fields(item,['skillId','level','practiceContextId']);
+     const practiceContextId=await choice('practice_context',item.practiceContextId,item.level>0);
+     if(item.level===0 && practiceContextId)throw problem(400,'Le contexte concerne seulement une pratique déclarée.');
+     return {skillId:item.skillId,level:item.level,practiceContextId};
+    }));
     const client=await pool.connect();
     try{await client.query('BEGIN');await client.query('SELECT pg_advisory_xact_lock(hashtext($1))',[user.learnerId]);
      for(const item of declarations){
       const id=randomUUID();
       await client.query(`INSERT INTO praxis.skill_evidence(id,learner_id,skill_id,level,evidence_type,confidence,provenance,observed_at)
        VALUES ($1,$2,$3,$4,'self_declared','low',$5::jsonb,clock_timestamp())`,
-       [id,user.learnerId,item.skillId,item.level,JSON.stringify({source:confirmation?'confirmed_profile_proposal':'exploration_profile',workExample:item.workExample})]);
+       [id,user.learnerId,item.skillId,item.level,JSON.stringify({source:confirmation?'confirmed_profile_proposal':'exploration_profile',practiceContextId:item.practiceContextId})]);
       await client.query(`UPDATE praxis.skill_evidence SET superseded_by=$1 WHERE learner_id=$2 AND skill_id=$3
        AND evidence_type='self_declared' AND superseded_by IS NULL AND id<>$1`,[id,user.learnerId,item.skillId]);
      }
@@ -191,6 +325,13 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null,aiPro
     json(await explorationResult(user));return;
    }
    if(url.pathname==='/api/explore'){json(await explorationResult(user));return;}
+   if(url.pathname==='/api/exploration/graph'){
+    fields(data,['page','pageSize','expandedIds','skillPage','skillState','skillKind','filter']);
+    const result=await explorationResult(user);
+    try{json(buildCareerGraph(result.profile,result.possibilities,data,result.careerLevels.coverage));}
+    catch(error){if(error instanceof CareerGraphInputError)throw problem(400,error.message);throw error;}
+    return;
+   }
    if(url.pathname==='/api/agent-gateway/compare'){
     if(Object.keys(data).some(key=>key!=='ids'))throw problem(400,'Formulaire de comparaison invalide.');
     try{json(await agentGateway.compare(user.learnerId,data.ids,()=>explorationResult(user)));}
@@ -198,14 +339,16 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null,aiPro
     return;
    }
    if(url.pathname==='/api/rome/confirmations'){
+    fields(data,['codeRome','ogr','response','practiceContextId']);
     const result=await explorationResult(user);
     const direction=result.possibilities.find(item=>item.romeCode===data.codeRome);
     if(!direction || typeof data.ogr!=='string' || !direction.requirements.some(item=>item.romeOgr===data.ogr) ||
-      !['practiced','not_yet','unsure'].includes(data.response))throw problem(400,'Exigence ROME indisponible.');
-    const workExample=shortText(data.workExample??'',2000,'Exemple');
-    if(data.response==='practiced' && workExample.length<5)throw problem(400,'Ajoutez un exemple concret.');
+      !['practiced','not_yet','unsure'].includes(data.response))throw problem(400,'Exigence du métier indisponible.');
+    await choice('requirement_response','requirement_response:'+data.response,true);
+    const practiceContextId=await choice('practice_context',data.practiceContextId,data.response==='practiced');
+    if(data.response!=='practiced' && practiceContextId)throw problem(400,'Le contexte concerne seulement une pratique déclarée.');
     const occupation=await rome.occupation(direction.romeCode);
-    await exploration.confirmRomeRequirement(user.learnerId,data.ogr,occupation.releaseId,data.response,workExample);
+    await exploration.confirmRomeRequirement(user.learnerId,data.ogr,occupation.releaseId,data.response,'',practiceContextId);
     json(await explorationResult(user));return;
    }
    if(url.pathname==='/api/directions/compare'){
@@ -229,9 +372,11 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null,aiPro
     json({selectedActions:await exploration.selectedActions(user.learnerId)});return;
    }
    if(url.pathname==='/api/feedback'){
+    fields(data,['directionId','useful','reasonId']);
+    const reasonId=await choice('feedback_reason',data.reasonId);
     if(typeof data.useful!=='boolean' || (data.directionId!==null && data.directionId!==undefined &&
       !(await explorationResult(user)).possibilities.some(item=>item.id===data.directionId)))throw problem(400,'Retour invalide.');
-    await exploration.feedback(user.learnerId,data.directionId??null,data.useful,shortText(data.comment??'',1000,'Commentaire'));
+    await exploration.feedback(user.learnerId,data.directionId??null,data.useful,'',reasonId);
     json({recorded:true});return;
    }
    if(url.pathname==='/api/impressions'){
@@ -282,7 +427,7 @@ export function createLearnerServer({pool,example=false,assessmentUrl=null,aiPro
    }catch(error){await client.query('ROLLBACK');throw error;}finally{client.release();}
    json(await recommendation(user,profile.occupationId,prefs));
   }catch(error){const status=error.status??(error instanceof SurveyNotFoundError?404:
-   error instanceof SurveyAnswerError || error instanceof SurveyStateError || error instanceof ContextValidationError ||
+   error instanceof SurveyAnswerError || error instanceof SurveyStateError || error instanceof ContextValidationError || error instanceof CareerLevelInputError ||
    error instanceof TypeError || error instanceof RangeError?400:500);
    if(status===500)console.error('Learner request failed:',error.message);
    json({error:status===500?'Le service est momentanément indisponible. Réessayez.':error.message},status);
@@ -304,7 +449,8 @@ if(process.argv[1] && import.meta.url===pathToFileURL(process.argv[1]).href){
    body:JSON.stringify(request),signal:AbortSignal.timeout(4500)});
   if(!response.ok)throw new Error('AI provider unavailable');return response.json();
  }:null;
- const server=createLearnerServer({pool,example:process.env.PRAXIS_LEARNER_EXAMPLE==='true',assessmentUrl:process.env.PRAXIS_ASSESSMENT_URL??null,aiProvider});
+ const agentProvider=process.env.NVIDIA_API_KEY?nvidiaProvider(process.env.NVIDIA_API_KEY):null;
+ const server=createLearnerServer({pool,example:process.env.PRAXIS_LEARNER_EXAMPLE==='true',assessmentUrl:process.env.PRAXIS_ASSESSMENT_URL??null,aiProvider,agentProvider});
  server.listen(port,'127.0.0.1',()=>console.log(`Praxis learner screen: http://127.0.0.1:${port}`));
  async function stop(){await new Promise(resolve=>server.close(resolve));await pool.end();process.exit(0);}
  process.on('SIGTERM',stop);process.on('SIGINT',stop);

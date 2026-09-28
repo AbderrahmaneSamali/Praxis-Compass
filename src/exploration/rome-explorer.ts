@@ -93,6 +93,13 @@ export class StandaloneRomeExplorer {
   /** Everything a card or detail page needs about one ROME job. */
   async occupation(codeRome: string): Promise<RomeOccupationProfile | null> {
     if (!ROME_CODE.test(codeRome)) return null;
+    return (await this.occupations([codeRome]))[0] ?? null;
+  }
+
+  /** Batch projection used by the complete explorer; avoids per-occupation queries. */
+  async occupations(codes: readonly string[]): Promise<RomeOccupationProfile[]> {
+    if (!codes.length) return [];
+    if (codes.some(code => !ROME_CODE.test(code))) throw new Error('Invalid occupation code');
     const result = await this.pool.query<{
       code_rome: string;
       label: string;
@@ -137,13 +144,11 @@ export class StandaloneRomeExplorer {
                           ON dv.release_id = d.release_id AND dv.domain_code = d.domain_code
                         WHERE d.release_id = r.id AND d.code_rome = v.code_rome), '[]') AS domains
        FROM release r
-       JOIN praxis.rome_occupation_versions v ON v.release_id = r.id AND v.code_rome = $1
+       JOIN praxis.rome_occupation_versions v ON v.release_id = r.id AND v.code_rome = ANY($1::text[])
        LEFT JOIN praxis.rome_occupation_riasec x ON x.release_id = r.id AND x.code_rome = v.code_rome`,
-      [codeRome],
+      [codes],
     );
-    const row = result.rows[0];
-    if (!row) return null;
-    return {
+    return result.rows.map(row => ({
       codeRome: row.code_rome,
       label: row.label,
       definition: (row.definition ?? []).map(displayRomeSentence),
@@ -154,7 +159,7 @@ export class StandaloneRomeExplorer {
       professionalDomains: row.domains,
       regulated: row.regulated,
       releaseId: row.release_id,
-    };
+    }));
   }
 
   /** France Travail's mobility links from a job, in their own order. */
@@ -247,6 +252,18 @@ export class StandaloneRomeExplorer {
     return { codeRome, label: found.label, releaseId: found.releaseId, ...groupRequirements(rows) };
   }
 
+  async requirementsFor(codes: readonly string[]): Promise<Map<string, JobRequirements>> {
+    if (!codes.length) return new Map();
+    if (codes.some(code => !ROME_CODE.test(code))) throw new Error('Invalid occupation code');
+    const grouped = new Map<string, RequirementRow[]>();
+    for (const row of await this.requirementRows(codes)) {
+      const items = grouped.get(row.codeRome) ?? [];
+      items.push(row);
+      grouped.set(row.codeRome, items);
+    }
+    return new Map(codes.map(code => [code, groupRequirements(grouped.get(code) ?? [])]));
+  }
+
   /**
    * Two or three jobs side by side: what they all require, what some do,
    * what only one does, and how each is entered.
@@ -290,9 +307,9 @@ export class StandaloneRomeExplorer {
    * Either input may be absent; with neither, every group is empty.
    */
   async possibilities(
-    input: Readonly<{ originCodeRome?: string; interestCentres?: readonly number[]; limit?: number }>,
+    input: Readonly<{ originCodeRome?: string; domainCode?: string; interestCentres?: readonly number[]; limit?: number | null; includeOrigin?: boolean }>,
   ): Promise<RomePossibilities> {
-    const limit = input.limit ?? 12;
+    const limit = input.limit === undefined ? 12 : input.limit;
     const origin = input.originCodeRome ?? null;
     if (origin !== null && !ROME_CODE.test(origin)) {
       throw new Error(`Invalid ROME code ${JSON.stringify(origin)}`);
@@ -327,11 +344,21 @@ export class StandaloneRomeExplorer {
       centres.length ? this.interestDirections(releaseId, centres) : Promise.resolve([]),
       origin ? this.sharedSkillDirections(releaseId, origin) : Promise.resolve([]),
     ]);
+    const domainRows = input.domainCode ? (await this.pool.query<{code_rome:string;label:string;domain_label:string}>(
+      `SELECT v.code_rome,v.preferred_label AS label,dv.domain_label
+       FROM praxis.rome_occupation_professional_domains d
+       JOIN praxis.rome_occupation_versions v ON v.release_id=d.release_id AND v.code_rome=d.code_rome
+       JOIN praxis.rome_professional_domain_versions dv ON dv.release_id=d.release_id AND dv.domain_code=d.domain_code
+       WHERE d.release_id=$1 AND d.domain_code=$2`,[releaseId,input.domainCode])).rows : [];
+    const allowed = new Set(domainRows.map(row=>row.code_rome));
+    const inScope = (items: readonly SourcedDirection[]) => input.domainCode ? items.filter(item=>allowed.has(item.codeRome)) : items;
+    const domain: SourcedDirection[] = domainRows.map(row=>({codeRome:row.code_rome,label:row.label,riasec:null,
+      reasons:[{kind:'rome_domain',domainCode:input.domainCode!,domainLabel:row.domain_label,releaseId}]}));
     return {
       origin: originFacts,
       confirmedInterests: confirmed,
       groups: assemblePossibilities(
-        { originCodeRome: origin, mobility, interests, sharedSkills },
+        { originCodeRome: origin, includeOrigin: input.includeOrigin, domain, mobility:inScope(mobility), interests:inScope(interests), sharedSkills:inScope(sharedSkills) },
         limit,
       ),
       releaseId,

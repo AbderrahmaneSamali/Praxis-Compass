@@ -6,6 +6,8 @@ export type StartingProfile = Readonly<{
   learnerId: string;
   currentRoleId: string | null;
   currentRomeCode?: string | null;
+  preferredDomainCode?: string | null;
+  preferredDomainLabel?: string | null;
   currentRomeLabel?: string | null;
   confirmedInterestCodes?: readonly number[];
   experience: string;

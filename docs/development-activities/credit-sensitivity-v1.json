@@ -1,0 +1,250 @@
+{
+  "activity": {
+    "id": "credit-sensitivity-v1",
+    "key": "credit-sensitivity",
+    "version": 1,
+    "title": "Tester un scénario de trésorerie simple",
+    "purpose": "Comparer deux hypothèses sans transformer un calcul pédagogique en décision de crédit.",
+    "output": "Deux restes mensuels et un signal à examiner, enregistrés par choix.",
+    "limitations": "Exercice pilote PRAXIS, sans revue métier indépendante. Données fictives et règles propres au cas ; aucune règle réglementaire française ou marocaine, décision de crédit réelle, ni validation de compétence ou de niveau de carrière.",
+    "minutes": 25,
+    "materials": {
+      "rows": [
+        [
+          "Revenu",
+          "4 000",
+          "3 600"
+        ],
+        [
+          "Charges",
+          "2 500",
+          "2 500"
+        ],
+        [
+          "Engagements existants",
+          "500",
+          "500"
+        ],
+        [
+          "Mensualité simulée",
+          "800",
+          "800"
+        ]
+      ],
+      "intro": "Cas B : toutes les données sont fournies. Calcul demandé = revenu − charges − engagements existants − mensualité simulée. Règle pédagogique : si le reste devient négatif, signaler ce scénario pour analyse ; ne pas décider du prêt.",
+      "columns": [
+        "Variable",
+        "Situation de base",
+        "Scénario"
+      ]
+    },
+    "author": "praxis-original-practice",
+    "status": "pilot",
+    "contentHash": "7846ff45cafb5962347d1b3abe7737e6aa101c0d7d28a161d6f4e668eb4ef933",
+    "reviewer": null,
+    "reviewedAt": null
+  },
+  "sources": [
+    {
+      "id": "case",
+      "title": "Cas pédagogique original PRAXIS",
+      "publisher": "PRAXIS",
+      "url": null,
+      "reference": "database/development-activities.mjs",
+      "kind": "authored_exercise",
+      "limitations": "Exercice pilote PRAXIS, sans revue métier indépendante. Données fictives et règles propres au cas ; aucune règle réglementaire française ou marocaine, décision de crédit réelle, ni validation de compétence ou de niveau de carrière."
+    },
+    {
+      "id": "catalog",
+      "title": "Lien métier-compétence du catalogue",
+      "publisher": "France Travail",
+      "url": "https://www.francetravail.fr/employeur/vos-recrutements/le-rome-et-les-fiches-metiers.html",
+      "reference": "rome:e539ca52-8933-4181-b5b1-6b3114bbd0c1:C1202:item:123187; rome:e539ca52-8933-4181-b5b1-6b3114bbd0c1:C1214:item:123187",
+      "kind": "occupation_catalog",
+      "limitations": "Le catalogue confirme le lien métier-compétence, pas la qualité pédagogique de cet exercice ni une maîtrise après réussite. Les rattachements locaux France/Maroc restent des périmètres pilotes."
+    }
+  ],
+  "scopes": [
+    {
+      "codeRome": "C1202",
+      "marketCode": "FR",
+      "sourceId": "case"
+    },
+    {
+      "codeRome": "C1202",
+      "marketCode": "MA",
+      "sourceId": "case"
+    },
+    {
+      "codeRome": "C1214",
+      "marketCode": "FR",
+      "sourceId": "case"
+    },
+    {
+      "codeRome": "C1214",
+      "marketCode": "MA",
+      "sourceId": "case"
+    }
+  ],
+  "skills": [
+    {
+      "ogr": "123187",
+      "label": "Evaluer la solvabilité d'un créditeur et les risques",
+      "sourceId": "catalog"
+    }
+  ],
+  "steps": [
+    {
+      "code": "step-1",
+      "position": 1,
+      "instruction": "Appliquez la formule fournie à la situation de base."
+    },
+    {
+      "code": "step-2",
+      "position": 2,
+      "instruction": "Appliquez la même formule au scénario ; seul le revenu change."
+    },
+    {
+      "code": "step-3",
+      "position": 3,
+      "instruction": "Comparez les résultats et choisissez le signal conforme à la règle pédagogique."
+    }
+  ],
+  "prerequisites": [
+    {
+      "code": "previous",
+      "kind": "activity_passed",
+      "requiredActivityId": "credit-evidence-v1",
+      "skillOgr": null,
+      "label": "Préparer un dossier de crédit fictif",
+      "rationale": "Ce cas reprend les données et les contrôles exercés dans l’activité précédente. Ce lien est pédagogique et explicite.",
+      "sourceId": "case"
+    }
+  ],
+  "criteria": [
+    {
+      "code": "base",
+      "position": 1,
+      "label": "Calculer le scénario de base",
+      "prompt": "Quel est le reste dans la situation de base ?",
+      "expectedBehavior": "Utiliser les quatre postes fournis.",
+      "sourceId": "case"
+    },
+    {
+      "code": "stress",
+      "position": 2,
+      "label": "Calculer le scénario dégradé",
+      "prompt": "Quel est le reste avec un revenu de 3 600 ?",
+      "expectedBehavior": "Réutiliser la même formule sans modifier les autres postes.",
+      "sourceId": "case"
+    },
+    {
+      "code": "signal",
+      "position": 3,
+      "label": "Interpréter selon la règle du cas",
+      "prompt": "Quelle conclusion respecte les données et la règle pédagogique ?",
+      "expectedBehavior": "Signaler le scénario sans inventer un seuil bancaire réel.",
+      "sourceId": "case"
+    }
+  ],
+  "options": [
+    {
+      "criterionCode": "base",
+      "code": "1000",
+      "position": 1,
+      "label": "1 000",
+      "isCorrect": false,
+      "feedback": "Ce montant oublie la mensualité simulée : 4 000 − 2 500 − 500 − 800 = 200."
+    },
+    {
+      "criterionCode": "base",
+      "code": "200",
+      "position": 2,
+      "label": "200",
+      "isCorrect": true,
+      "feedback": "Les quatre postes donnent un reste de 200."
+    },
+    {
+      "criterionCode": "base",
+      "code": "700",
+      "position": 3,
+      "label": "700",
+      "isCorrect": false,
+      "feedback": "Les engagements existants de 500 doivent aussi être soustraits."
+    },
+    {
+      "criterionCode": "base",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    },
+    {
+      "criterionCode": "signal",
+      "code": "approve",
+      "position": 1,
+      "label": "Le prêt doit obligatoirement être accordé",
+      "isCorrect": false,
+      "feedback": "Le cas n’établit aucune règle d’octroi réelle."
+    },
+    {
+      "criterionCode": "signal",
+      "code": "decline",
+      "position": 2,
+      "label": "Le prêt doit obligatoirement être refusé",
+      "isCorrect": false,
+      "feedback": "Le cas ne donne qu’un signal de trésorerie à analyser."
+    },
+    {
+      "criterionCode": "signal",
+      "code": "analyse",
+      "position": 3,
+      "label": "Le scénario devient négatif ; demander une analyse complémentaire",
+      "isCorrect": true,
+      "feedback": "C’est le signal prévu dans ce cas. Il ne constitue pas une décision de crédit."
+    },
+    {
+      "criterionCode": "signal",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    },
+    {
+      "criterionCode": "stress",
+      "code": "negative200",
+      "position": 1,
+      "label": "−200",
+      "isCorrect": true,
+      "feedback": "3 600 − 2 500 − 500 − 800 = −200."
+    },
+    {
+      "criterionCode": "stress",
+      "code": "positive200",
+      "position": 2,
+      "label": "200",
+      "isCorrect": false,
+      "feedback": "Le revenu diminue de 400 : le reste de 200 devient −200."
+    },
+    {
+      "criterionCode": "stress",
+      "code": "600",
+      "position": 3,
+      "label": "600",
+      "isCorrect": false,
+      "feedback": "La mensualité simulée doit également être soustraite."
+    },
+    {
+      "criterionCode": "stress",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    }
+  ],
+  "levelTargets": [],
+  "hash": "7846ff45cafb5962347d1b3abe7737e6aa101c0d7d28a161d6f4e668eb4ef933"
+}

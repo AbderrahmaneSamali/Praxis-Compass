@@ -62,8 +62,8 @@ export function exploreDirections(profile: StartingProfile, directions: readonly
   }
   return { possibilities, questions: questions.slice(0, 3),
     coverageNote: directions.some(item => item.romeCode) || profile.currentRomeCode || profile.confirmedInterestCodes?.length
-      ? 'Pistes issues de ROME v61. Les exigences ROME ne publient pas de niveau attendu; seules vos confirmations directes y sont comparées. Aucun score de compatibilité n’est calculé.'
-      : 'Choisissez un métier ROME ou confirmez des centres d’intérêt pour voir des pistes; le catalogue éditorial reste disponible séparément.', evidence };
+      ? 'Pistes issues des fiches métiers de France Travail. Ces fiches ne publient pas de niveau attendu; seules vos confirmations directes y sont comparées. Aucun score de compatibilité n’est calculé.'
+      : 'Choisissez votre métier ou confirmez des centres d’intérêt pour voir des pistes; le catalogue éditorial reste disponible séparément.', evidence };
 }
 
 export function compareDirections(possibilities: readonly CareerPossibility[], ids: readonly string[]): CareerPossibility[] {

@@ -11,19 +11,29 @@
     "test": "npm run build && node --test tests/*.test.mjs",
     "test:db": "npm run build && node --test tests/postgres.integration.mjs",
     "test:learner": "npm run build && node --test tests/learner.integration.mjs",
+    "test:career-levels": "npm run build && node --test tests/career-levels.test.mjs tests/career-levels.integration.mjs",
+    "career:drafts": "npm run build && node database/career-framework-drafts.mjs --write-drafts",
+    "activities:drafts": "npm run build && node database/development-activities.mjs --write-drafts",
+    "activities:pilots": "npm run build && node database/development-activities.mjs --enable-pilots",
+    "test:activities": "npm run build && node --test tests/activities.test.mjs tests/activities.integration.mjs",
     "learner": "npm run build && node learner/server.mjs",
     "simulate": "npm run build && node simulation/run.mjs",
+    "evaluate:career-journeys": "npm run build && node evaluation/career-journeys/run.mjs",
     "cv:benchmark": "npm run build && node evaluation/cv-skills/run-pilot.mjs",
     "cv:annotation": "node evaluation/cv-skills/annotation-workflow.mjs",
     "demo": "tsx examples/demo-run.ts",
     "migrate": "tsx database/migrate.ts",
     "rome:exploration": "tsx database/ingest-rome-exploration.ts",
     "db:up": "docker compose -f docker-compose.db.yml up -d",
-    "db:down": "docker compose -f docker-compose.db.yml down"
+    "db:down": "docker compose -f docker-compose.db.yml down",
+    "test:development-plan": "npm run build && node --test tests/development-plan.test.mjs tests/development-plan.integration.mjs",
+    "test:career-reports": "npm run build && node --test tests/career-report.test.mjs tests/career-report.integration.mjs",
+    "test:career-agent": "npm run build && node --test tests/career-agent.test.mjs tests/career-agent.integration.mjs"
   },
   "dependencies": {
     "dotenv": "^16.4.7",
     "fflate": "^0.8.3",
+    "pdf-lib": "1.17.1",
     "pg": "^8.13.1"
   },
   "devDependencies": {

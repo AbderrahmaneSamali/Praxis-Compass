@@ -1,3 +1,4 @@
+import { loadLearnerChoices, type LearnerChoiceCatalog } from '../exploration/learner-choices.js';
 import type { Pool, PoolClient } from 'pg';
 
 import { ALGORITHM_VERSIONS } from '../kernel/algorithm-versions.js';
@@ -53,6 +54,7 @@ type SessionRecord = Readonly<{
   goalKind: 'role' | 'task';
   goalText: string | null;
   surveyDate: string;
+  catalog: LearnerChoiceCatalog;
   status: ContextSurveyState['status'];
   resultingContextId: string | null;
 }>;
@@ -98,11 +100,11 @@ type ContextRow = Readonly<{
 const INSERT_ANSWER = `
   INSERT INTO praxis.context_survey_answer
     (session_id, survey_version, question_id, sequence, value, declined,
-     source, prompt_fr, triggered_by)
+     source, prompt_fr, triggered_by, option_id)
   SELECT $1, $2, $3,
          coalesce((SELECT max(sequence) + 1 FROM praxis.context_survey_answer
                    WHERE session_id = $1), 0),
-         $4::jsonb, $5, $6, $7, $8::jsonb`;
+         $4::jsonb, $5, $6, $7, $8::jsonb, CASE WHEN $5 THEN NULL ELSE $9 END`;
 
 function answerParameters(
   sessionId: string,
@@ -118,6 +120,7 @@ function answerParameters(
     answer.source,
     answer.promptFr,
     JSON.stringify(answer.triggeredBy),
+    answer.declined ? null : `${answer.questionId}:${answer.value}`,
   ];
 }
 
@@ -130,6 +133,7 @@ function toNumber(value: string | null) {
 function factsOf(session: SessionRecord): SurveyFacts {
   return {
     today: session.surveyDate,
+    catalog: session.catalog,
     roleLabel: session.roleLabel,
     goalKind: session.goalKind,
     goalText: session.goalText,
@@ -202,12 +206,13 @@ export class StandaloneContextSurvey {
          JOIN praxis.source_releases r ON r.id=v.release_id AND r.source='rome' AND r.is_active
          WHERE v.code_rome=$1`,[romeCode]);
       roleLabel=role.rows[0]?.preferred_label ?? null;
-      if (!roleLabel) throw new SurveyStateError('Unknown ROME occupation');
+      if (!roleLabel) throw new SurveyStateError('Métier indisponible');
     }
 
     const prior = await this.currentContext(input.learnerId);
     const surveyDate = new Date().toISOString().slice(0, 10);
-    const facts: SurveyFacts = { today: surveyDate, roleLabel, goalKind, goalText };
+    const catalog = await loadLearnerChoices(this.pool);
+    const facts: SurveyFacts = { today: surveyDate, roleLabel, goalKind, goalText, catalog };
 
     const explicit = new Map<string, RecordedAnswer>();
     const seeds: NewAnswer[] = [];
@@ -250,8 +255,8 @@ export class StandaloneContextSurvey {
       const inserted = await client.query<{ id: string }>(
         `INSERT INTO praxis.context_survey_session
            (learner_id, survey_version, algorithm_version, inputs_hash, role_id,
-            rome_code, role_label, goal_kind, goal_text, survey_date, prior_context_id)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+            rome_code, role_label, goal_kind, goal_text, survey_date, prior_context_id, choice_catalog)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::jsonb)
          RETURNING id`,
         [
           input.learnerId,
@@ -265,6 +270,7 @@ export class StandaloneContextSurvey {
             goalKind,
             goalText,
             surveyDate,
+            catalog,
             priorContextId,
             seeds: seeds.map((seed) => [seed.questionId, seed.value]),
           }),
@@ -275,6 +281,7 @@ export class StandaloneContextSurvey {
           goalText,
           surveyDate,
           priorContextId,
+          JSON.stringify(catalog),
         ],
       );
       const id = inserted.rows[0]?.id;
@@ -290,7 +297,7 @@ export class StandaloneContextSurvey {
   async latest(learnerId: string): Promise<ContextSurveyState | null> {
     const result=await this.pool.query<{id:string}>(
       `SELECT id FROM praxis.context_survey_session
-       WHERE learner_id=$1 ORDER BY started_at DESC,id DESC LIMIT 1`,[learnerId]);
+       WHERE learner_id=$1 AND survey_version=$2 ORDER BY started_at DESC,id DESC LIMIT 1`,[learnerId,ALGORITHM_VERSIONS.learnerContextSurvey]);
     return result.rows[0] ? this.present(result.rows[0].id) : null;
   }
 
@@ -434,10 +441,10 @@ export class StandaloneContextSurvey {
            motivation, situation, deadline, budget_band, budget_min_mad, budget_max_mad,
            hours_per_week, format_pref, location_city, remote_only, languages,
            intensity_pref, declined_fields, goal_kind, goal_text, recent_work_example,
-           budget_flexibility, language_flexibility, format_flexibility, online_format)
+           budget_flexibility, language_flexibility, format_flexibility, online_format, practice_context_id)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15,
                  $16, $17, $18, $19, $20, $21, $22, $23, $24,
-                 $25, $26, $27, $28)
+                 $25, $26, $27, $28, $29)
          RETURNING id`,
         [
           learnerId,
@@ -468,6 +475,7 @@ export class StandaloneContextSurvey {
           context.languageFlexibility ?? 'mandatory',
           context.formatFlexibility ?? 'flexible',
           context.onlineFormat ?? null,
+          resolved.state.answers.get('practice_context')?.value ? `practice_context:${resolved.state.answers.get('practice_context')!.value}` : null,
         ],
       );
       const id = inserted.rows[0]?.id;
@@ -516,13 +524,14 @@ export class StandaloneContextSurvey {
       goal_kind: 'role' | 'task';
       goal_text: string | null;
       survey_date: string;
+      choice_catalog: LearnerChoiceCatalog;
       status: SessionRecord['status'];
       resulting_context_id: string | null;
     }>(
       `SELECT session.id, session.learner_id, session.survey_version,
               session.role_label, session.goal_kind,
               session.goal_text, session.survey_date::text AS survey_date,
-              session.status, session.resulting_context_id
+              session.status, session.resulting_context_id, session.choice_catalog
        FROM praxis.context_survey_session AS session
        WHERE session.id = $1`,
       [sessionId],
@@ -537,6 +546,7 @@ export class StandaloneContextSurvey {
       goalKind: row.goal_kind,
       goalText: row.goal_text,
       surveyDate: row.survey_date,
+      catalog: row.choice_catalog ?? {},
       status: row.status,
       resultingContextId: row.resulting_context_id,
     };
@@ -614,6 +624,7 @@ export class StandaloneContextSurvey {
 
   private async openSession(learnerId: string, sessionId: string) {
     const session = await this.ownedSession(learnerId, sessionId);
+    if (session.surveyVersion !== ALGORITHM_VERSIONS.learnerContextSurvey) throw new SurveyStateError('Recommencez le questionnaire avec les nouveaux choix.');
     if (session.status !== 'in_progress') {
       throw new SurveyStateError('This survey is already closed');
     }

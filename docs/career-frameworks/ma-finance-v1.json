@@ -1,0 +1,625 @@
+{
+  "framework": {
+    "id": "ma-finance-v1",
+    "familyId": "finance",
+    "marketCode": "MA",
+    "version": 1,
+    "title": "Finance · Maroc · proposition de niveaux",
+    "scope": "Pilote limité aux opérations sur marchés financiers (C1302), avec des variantes proposées d’expertise, de projet et d’encadrement.",
+    "limitations": "Brouillon éditorial. Libellés, critères, affectations métier et transitions à faire revoir par un spécialiste du marché. Aucun grade officiel, droit à promotion, délai, salaire, ni équivalence Senior/Lead/Staff. Les niveaux ne s’étendent pas automatiquement à toute la famille.",
+    "author": "praxis-research-draft",
+    "status": "draft",
+    "reviewer": null,
+    "reviewedAt": null,
+    "contentHash": null
+  },
+  "sources": [
+    {
+      "id": "career-policy",
+      "title": "Emploi & carrières",
+      "publisher": "Attijariwafa bank",
+      "url": "https://www.attijariwafabank.com/fr/emploi-carrieres",
+      "accessedOn": "2026-09-27",
+      "locator": "Politique RH et développement des compétences",
+      "supportKind": "career_policy",
+      "reuseNote": "Lien bibliographique et résumé limité ; aucun texte source intégral reproduit, aucune licence de redistribution présumée.",
+      "limitations": "Contexte propre à cet employeur. Aucune grille de grades ou de maîtrise publiquement établie dans cette page."
+    },
+    {
+      "id": "catalog",
+      "title": "Catalogue métiers utilisé pour les identifiants de compétences",
+      "publisher": "France Travail",
+      "url": "https://www.francetravail.fr/employeur/vos-recrutements/le-rome-et-les-fiches-metiers.html",
+      "accessedOn": "2026-09-27",
+      "locator": "Base locale active : identifiants métier et compétence",
+      "supportKind": "occupation_context",
+      "reuseNote": "Lien bibliographique et résumé limité ; aucun texte source intégral reproduit, aucune licence de redistribution présumée.",
+      "limitations": "Taxonomie française de référence technique. Applicabilité au Maroc et attentes par niveau à revoir séparément."
+    },
+    {
+      "id": "local-context",
+      "title": "Nos métiers",
+      "publisher": "BANK OF AFRICA",
+      "url": "https://www.bankofafrica.ma/fr/groupe/nos-metiers",
+      "accessedOn": "2026-09-27",
+      "locator": "Métiers et domaines d’expertise du groupe",
+      "supportKind": "occupation_context",
+      "reuseNote": "Lien bibliographique et résumé limité ; aucun texte source intégral reproduit, aucune licence de redistribution présumée.",
+      "limitations": "Présentation d’un employeur marocain, pas une grille nationale de niveaux. Ne valide aucun seuil de séniorité, ni aucune correspondance de compétences."
+    },
+    {
+      "id": "proposal",
+      "title": "Proposition de structuration PRAXIS",
+      "publisher": "PRAXIS · rédaction de brouillon",
+      "url": null,
+      "accessedOn": "2026-09-27",
+      "locator": "database/career-framework-drafts.mjs",
+      "supportKind": "authored_proposal",
+      "reuseNote": "Texte original PRAXIS, à revoir.",
+      "limitations": "Tous les niveaux et critères ci-dessous sont des propositions. Le fait de citer des sources de contexte ne les valide pas."
+    }
+  ],
+  "levels": [
+    {
+      "code": "E1",
+      "trackCode": "expertise",
+      "label": "Opérateur accompagné",
+      "order": 1,
+      "autonomy": "Traiter des situations définies avec validation par un référent.",
+      "scope": "Dossiers ou opérations délimités.",
+      "influence": "Signaler les anomalies et demander une vérification.",
+      "managesPeople": false,
+      "basis": "editorial_proposal",
+      "sourceId": "proposal"
+    },
+    {
+      "code": "E2",
+      "trackCode": "expertise",
+      "label": "Gestionnaire autonome des opérations",
+      "order": 2,
+      "autonomy": "Décider dans les limites documentées de sa délégation.",
+      "scope": "Ensemble de dossiers ou flux attribués.",
+      "influence": "Expliquer ses décisions et aider à résoudre les incidents courants.",
+      "managesPeople": false,
+      "basis": "editorial_proposal",
+      "sourceId": "proposal"
+    },
+    {
+      "code": "E3",
+      "trackCode": "expertise",
+      "label": "Référent opérations de marché",
+      "order": 3,
+      "autonomy": "Traiter les situations complexes et faire évoluer les méthodes dans son mandat.",
+      "scope": "Expertise partagée au-delà de son portefeuille de dossiers.",
+      "influence": "Accompagner les pairs et soumettre des améliorations aux instances compétentes.",
+      "managesPeople": false,
+      "basis": "editorial_proposal",
+      "sourceId": "proposal"
+    },
+    {
+      "code": "M1",
+      "trackCode": "management",
+      "label": "Responsable d’équipe opérations",
+      "order": 1,
+      "autonomy": "Organiser l’activité d’une équipe dans le cadre des délégations reçues.",
+      "scope": "Une équipe avec objectifs et moyens identifiés.",
+      "influence": "Répartir le travail, accompagner les collaborateurs et faire remonter les risques.",
+      "managesPeople": true,
+      "basis": "editorial_proposal",
+      "sourceId": "proposal"
+    },
+    {
+      "code": "M2",
+      "trackCode": "management",
+      "label": "Responsable d’activité opérations",
+      "order": 2,
+      "autonomy": "Arbitrer les priorités et les ressources d’un périmètre plus complexe.",
+      "scope": "Activité élargie, interfaces et délégations à préciser avec l’employeur.",
+      "influence": "Développer les relais et organiser la supervision des risques.",
+      "managesPeople": true,
+      "basis": "editorial_proposal",
+      "sourceId": "proposal"
+    },
+    {
+      "code": "P1",
+      "trackCode": "project_leadership",
+      "label": "Pilote de projet opérations",
+      "order": 1,
+      "autonomy": "Coordonner un projet selon un mandat, des jalons et une gouvernance explicites.",
+      "scope": "Projet avec plusieurs contributeurs.",
+      "influence": "Obtenir des arbitrages sans supposer d’autorité hiérarchique.",
+      "managesPeople": false,
+      "basis": "editorial_proposal",
+      "sourceId": "proposal"
+    }
+  ],
+  "applicability": [
+    {
+      "levelCode": "E1",
+      "codeRome": "C1302",
+      "rationale": "Rattachement proposé à ce métier pilote ; pertinence locale et périmètre à faire valider.",
+      "sourceId": "proposal"
+    },
+    {
+      "levelCode": "E2",
+      "codeRome": "C1302",
+      "rationale": "Rattachement proposé à ce métier pilote ; pertinence locale et périmètre à faire valider.",
+      "sourceId": "proposal"
+    },
+    {
+      "levelCode": "E3",
+      "codeRome": "C1302",
+      "rationale": "Rattachement proposé à ce métier pilote ; pertinence locale et périmètre à faire valider.",
+      "sourceId": "proposal"
+    },
+    {
+      "levelCode": "M1",
+      "codeRome": "C1302",
+      "rationale": "Variante proposée uniquement pour un poste comportant réellement une responsabilité hiérarchique. Le code métier ne suffit pas à établir cette responsabilité.",
+      "sourceId": "proposal"
+    },
+    {
+      "levelCode": "M2",
+      "codeRome": "C1302",
+      "rationale": "Variante proposée uniquement pour un poste comportant réellement une responsabilité hiérarchique. Le code métier ne suffit pas à établir cette responsabilité.",
+      "sourceId": "proposal"
+    },
+    {
+      "levelCode": "P1",
+      "codeRome": "C1302",
+      "rationale": "Rattachement proposé à ce métier pilote ; pertinence locale et périmètre à faire valider.",
+      "sourceId": "proposal"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "E1-autonomy",
+      "levelCode": "E1",
+      "dimension": "autonomy",
+      "label": "Autonomie et délégation",
+      "expectedBehavior": "Traiter des situations définies avec validation par un référent.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "E1-influence",
+      "levelCode": "E1",
+      "dimension": "influence",
+      "label": "Contribution collective",
+      "expectedBehavior": "Signaler les anomalies et demander une vérification.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "E1-scope",
+      "levelCode": "E1",
+      "dimension": "scope",
+      "label": "Périmètre de responsabilité",
+      "expectedBehavior": "Dossiers ou opérations délimités.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "E1-skill",
+      "levelCode": "E1",
+      "dimension": "skill",
+      "label": "Contrôler la conformité de traitement des opérations boursières",
+      "expectedBehavior": "Proposition : mobiliser cette compétence au périmètre et à l’autonomie décrits pour « Opérateur accompagné ». Une grille métier locale doit encore préciser les critères d’évaluation.",
+      "skillOgr": "121569",
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "E2-autonomy",
+      "levelCode": "E2",
+      "dimension": "autonomy",
+      "label": "Autonomie et délégation",
+      "expectedBehavior": "Décider dans les limites documentées de sa délégation.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "E2-influence",
+      "levelCode": "E2",
+      "dimension": "influence",
+      "label": "Contribution collective",
+      "expectedBehavior": "Expliquer ses décisions et aider à résoudre les incidents courants.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "E2-scope",
+      "levelCode": "E2",
+      "dimension": "scope",
+      "label": "Périmètre de responsabilité",
+      "expectedBehavior": "Ensemble de dossiers ou flux attribués.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "E2-skill",
+      "levelCode": "E2",
+      "dimension": "skill",
+      "label": "Contrôler la conformité de traitement des opérations boursières",
+      "expectedBehavior": "Proposition : mobiliser cette compétence au périmètre et à l’autonomie décrits pour « Gestionnaire autonome des opérations ». Une grille métier locale doit encore préciser les critères d’évaluation.",
+      "skillOgr": "121569",
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "E3-autonomy",
+      "levelCode": "E3",
+      "dimension": "autonomy",
+      "label": "Autonomie et délégation",
+      "expectedBehavior": "Traiter les situations complexes et faire évoluer les méthodes dans son mandat.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "E3-influence",
+      "levelCode": "E3",
+      "dimension": "influence",
+      "label": "Contribution collective",
+      "expectedBehavior": "Accompagner les pairs et soumettre des améliorations aux instances compétentes.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "E3-scope",
+      "levelCode": "E3",
+      "dimension": "scope",
+      "label": "Périmètre de responsabilité",
+      "expectedBehavior": "Expertise partagée au-delà de son portefeuille de dossiers.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "E3-skill",
+      "levelCode": "E3",
+      "dimension": "skill",
+      "label": "Contrôler la conformité de traitement des opérations boursières",
+      "expectedBehavior": "Proposition : mobiliser cette compétence au périmètre et à l’autonomie décrits pour « Référent opérations de marché ». Une grille métier locale doit encore préciser les critères d’évaluation.",
+      "skillOgr": "121569",
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "M1-autonomy",
+      "levelCode": "M1",
+      "dimension": "autonomy",
+      "label": "Autonomie et délégation",
+      "expectedBehavior": "Organiser l’activité d’une équipe dans le cadre des délégations reçues.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "M1-influence",
+      "levelCode": "M1",
+      "dimension": "influence",
+      "label": "Accompagnement de l’équipe",
+      "expectedBehavior": "Répartir le travail, accompagner les collaborateurs et faire remonter les risques.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "M1-scope",
+      "levelCode": "M1",
+      "dimension": "scope",
+      "label": "Périmètre de responsabilité",
+      "expectedBehavior": "Une équipe avec objectifs et moyens identifiés.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "M1-skill",
+      "levelCode": "M1",
+      "dimension": "skill",
+      "label": "Animer, coordonner une équipe",
+      "expectedBehavior": "Proposition : mobiliser cette compétence au périmètre et à l’autonomie décrits pour « Responsable d’équipe opérations ». Une grille métier locale doit encore préciser les critères d’évaluation.",
+      "skillOgr": "300440",
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "M2-autonomy",
+      "levelCode": "M2",
+      "dimension": "autonomy",
+      "label": "Autonomie et délégation",
+      "expectedBehavior": "Arbitrer les priorités et les ressources d’un périmètre plus complexe.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "M2-influence",
+      "levelCode": "M2",
+      "dimension": "influence",
+      "label": "Accompagnement de l’équipe",
+      "expectedBehavior": "Développer les relais et organiser la supervision des risques.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "M2-scope",
+      "levelCode": "M2",
+      "dimension": "scope",
+      "label": "Périmètre de responsabilité",
+      "expectedBehavior": "Activité élargie, interfaces et délégations à préciser avec l’employeur.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "M2-skill",
+      "levelCode": "M2",
+      "dimension": "skill",
+      "label": "Animer, coordonner une équipe",
+      "expectedBehavior": "Proposition : mobiliser cette compétence au périmètre et à l’autonomie décrits pour « Responsable d’activité opérations ». Une grille métier locale doit encore préciser les critères d’évaluation.",
+      "skillOgr": "300440",
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "P1-autonomy",
+      "levelCode": "P1",
+      "dimension": "autonomy",
+      "label": "Autonomie et délégation",
+      "expectedBehavior": "Coordonner un projet selon un mandat, des jalons et une gouvernance explicites.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "P1-influence",
+      "levelCode": "P1",
+      "dimension": "influence",
+      "label": "Contribution collective",
+      "expectedBehavior": "Obtenir des arbitrages sans supposer d’autorité hiérarchique.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "P1-scope",
+      "levelCode": "P1",
+      "dimension": "scope",
+      "label": "Périmètre de responsabilité",
+      "expectedBehavior": "Projet avec plusieurs contributeurs.",
+      "skillOgr": null,
+      "skillId": null,
+      "sourceId": "proposal"
+    },
+    {
+      "id": "P1-skill",
+      "levelCode": "P1",
+      "dimension": "skill",
+      "label": "Contrôler la conformité de traitement des opérations boursières",
+      "expectedBehavior": "Proposition : mobiliser cette compétence au périmètre et à l’autonomie décrits pour « Pilote de projet opérations ». Une grille métier locale doit encore préciser les critères d’évaluation.",
+      "skillOgr": "121569",
+      "skillId": null,
+      "sourceId": "proposal"
+    }
+  ],
+  "criteria": [
+    {
+      "requirementId": "E1-autonomy",
+      "code": "scenario",
+      "label": "Dans une mise en situation, distinguer les décisions autorisées de celles à escalader.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "E1-influence",
+      "code": "scenario",
+      "label": "Dans un cas collectif, choisir une contribution adaptée et identifier les personnes à consulter.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "E1-scope",
+      "code": "scenario",
+      "label": "Sélectionner les responsabilités et interfaces qui appartiennent au mandat présenté.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "E1-skill",
+      "code": "observed",
+      "label": "Faire observer une situation représentative et faire confirmer les critères de qualité, d’autonomie et d’escalade par un évaluateur désigné.",
+      "assessmentMode": "observed_practice",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "E2-autonomy",
+      "code": "scenario",
+      "label": "Dans une mise en situation, distinguer les décisions autorisées de celles à escalader.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "E2-influence",
+      "code": "scenario",
+      "label": "Dans un cas collectif, choisir une contribution adaptée et identifier les personnes à consulter.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "E2-scope",
+      "code": "scenario",
+      "label": "Sélectionner les responsabilités et interfaces qui appartiennent au mandat présenté.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "E2-skill",
+      "code": "observed",
+      "label": "Faire observer une situation représentative et faire confirmer les critères de qualité, d’autonomie et d’escalade par un évaluateur désigné.",
+      "assessmentMode": "observed_practice",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "E3-autonomy",
+      "code": "scenario",
+      "label": "Dans une mise en situation, distinguer les décisions autorisées de celles à escalader.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "E3-influence",
+      "code": "scenario",
+      "label": "Dans un cas collectif, choisir une contribution adaptée et identifier les personnes à consulter.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "E3-scope",
+      "code": "scenario",
+      "label": "Sélectionner les responsabilités et interfaces qui appartiennent au mandat présenté.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "E3-skill",
+      "code": "observed",
+      "label": "Faire observer une situation représentative et faire confirmer les critères de qualité, d’autonomie et d’escalade par un évaluateur désigné.",
+      "assessmentMode": "observed_practice",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "M1-autonomy",
+      "code": "scenario",
+      "label": "Dans une mise en situation, distinguer les décisions autorisées de celles à escalader.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "M1-influence",
+      "code": "scenario",
+      "label": "Dans un cas d’équipe, choisir une répartition justifiée du travail et un accompagnement adapté.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "M1-scope",
+      "code": "scenario",
+      "label": "Sélectionner les responsabilités et interfaces qui appartiennent au mandat présenté.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "M1-skill",
+      "code": "observed",
+      "label": "Faire observer une situation représentative et faire confirmer les critères de qualité, d’autonomie et d’escalade par un évaluateur désigné.",
+      "assessmentMode": "observed_practice",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "M2-autonomy",
+      "code": "scenario",
+      "label": "Dans une mise en situation, distinguer les décisions autorisées de celles à escalader.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "M2-influence",
+      "code": "scenario",
+      "label": "Dans un cas d’équipe, choisir une répartition justifiée du travail et un accompagnement adapté.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "M2-scope",
+      "code": "scenario",
+      "label": "Sélectionner les responsabilités et interfaces qui appartiennent au mandat présenté.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "M2-skill",
+      "code": "observed",
+      "label": "Faire observer une situation représentative et faire confirmer les critères de qualité, d’autonomie et d’escalade par un évaluateur désigné.",
+      "assessmentMode": "observed_practice",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "P1-autonomy",
+      "code": "scenario",
+      "label": "Dans une mise en situation, distinguer les décisions autorisées de celles à escalader.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "P1-influence",
+      "code": "scenario",
+      "label": "Dans un cas collectif, choisir une contribution adaptée et identifier les personnes à consulter.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "P1-scope",
+      "code": "scenario",
+      "label": "Sélectionner les responsabilités et interfaces qui appartiennent au mandat présenté.",
+      "assessmentMode": "structured_scenario",
+      "sourceId": "proposal"
+    },
+    {
+      "requirementId": "P1-skill",
+      "code": "observed",
+      "label": "Faire observer une situation représentative et faire confirmer les critères de qualité, d’autonomie et d’escalade par un évaluateur désigné.",
+      "assessmentMode": "observed_practice",
+      "sourceId": "proposal"
+    }
+  ],
+  "transitions": [
+    {
+      "fromCode": "E1",
+      "toCode": "E2",
+      "kind": "progression",
+      "rationale": "Transition proposée à examiner selon les critères du niveau cible et les responsabilités réelles. Ni passage obligatoire, ni promotion garantie.",
+      "sourceId": "proposal"
+    },
+    {
+      "fromCode": "E2",
+      "toCode": "E3",
+      "kind": "progression",
+      "rationale": "Transition proposée à examiner selon les critères du niveau cible et les responsabilités réelles. Ni passage obligatoire, ni promotion garantie.",
+      "sourceId": "proposal"
+    },
+    {
+      "fromCode": "E2",
+      "toCode": "P1",
+      "kind": "track_change",
+      "rationale": "Transition proposée à examiner selon les critères du niveau cible et les responsabilités réelles. Ni passage obligatoire, ni promotion garantie.",
+      "sourceId": "proposal"
+    },
+    {
+      "fromCode": "E3",
+      "toCode": "M1",
+      "kind": "track_change",
+      "rationale": "Transition proposée à examiner selon les critères du niveau cible et les responsabilités réelles. Ni passage obligatoire, ni promotion garantie.",
+      "sourceId": "proposal"
+    },
+    {
+      "fromCode": "M1",
+      "toCode": "M2",
+      "kind": "progression",
+      "rationale": "Transition proposée à examiner selon les critères du niveau cible et les responsabilités réelles. Ni passage obligatoire, ni promotion garantie.",
+      "sourceId": "proposal"
+    }
+  ],
+  "hash": "9d82d83f15abd5203da4becb0ff77f404a16469e521a51663e61a02f3d1e955a",
+  "structuralErrors": []
+}

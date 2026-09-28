@@ -1,0 +1,235 @@
+{
+  "activity": {
+    "id": "market-quality-v1",
+    "key": "market-quality",
+    "version": 1,
+    "title": "Mesurer la qualité d’un traitement de lot",
+    "purpose": "Calculer des indicateurs simples et choisir une expérimentation d’amélioration.",
+    "output": "Un mini-bilan qualité avec deux indicateurs et une action proposée.",
+    "limitations": "Exercice pilote PRAXIS, sans revue métier indépendante. Données fictives et règles propres au cas ; aucune règle réglementaire française ou marocaine, décision de crédit réelle, ni validation de compétence ou de niveau de carrière.",
+    "minutes": 30,
+    "materials": {
+      "rows": [
+        [
+          "Opérations traitées",
+          "200"
+        ],
+        [
+          "Anomalies détectées",
+          "20"
+        ],
+        [
+          "Anomalies résolues le jour même",
+          "15"
+        ],
+        [
+          "Anomalies encore ouvertes",
+          "5"
+        ]
+      ],
+      "intro": "Cas C : sur 200 opérations traitées, 20 anomalies ont été détectées. 15 de ces anomalies ont été résolues le jour même. Définitions du cas : taux initial = anomalies / opérations ; taux de résolution = anomalies résolues / anomalies détectées. Ces indicateurs n’établissent pas un seuil réglementaire.",
+      "columns": [
+        "Mesure",
+        "Valeur"
+      ]
+    },
+    "author": "praxis-original-practice",
+    "status": "pilot",
+    "contentHash": "8a981361948ed667095e8d827c22146c3e2caec6d8cc305dac8967829f8141fa",
+    "reviewer": null,
+    "reviewedAt": null
+  },
+  "sources": [
+    {
+      "id": "case",
+      "title": "Cas pédagogique original PRAXIS",
+      "publisher": "PRAXIS",
+      "url": null,
+      "reference": "database/development-activities.mjs",
+      "kind": "authored_exercise",
+      "limitations": "Exercice pilote PRAXIS, sans revue métier indépendante. Données fictives et règles propres au cas ; aucune règle réglementaire française ou marocaine, décision de crédit réelle, ni validation de compétence ou de niveau de carrière."
+    },
+    {
+      "id": "catalog",
+      "title": "Lien métier-compétence du catalogue",
+      "publisher": "France Travail",
+      "url": "https://www.francetravail.fr/employeur/vos-recrutements/le-rome-et-les-fiches-metiers.html",
+      "reference": "rome:e539ca52-8933-4181-b5b1-6b3114bbd0c1:C1302:item:124442",
+      "kind": "occupation_catalog",
+      "limitations": "Le catalogue confirme le lien métier-compétence, pas la qualité pédagogique de cet exercice ni une maîtrise après réussite. Les rattachements locaux France/Maroc restent des périmètres pilotes."
+    }
+  ],
+  "scopes": [
+    {
+      "codeRome": "C1302",
+      "marketCode": "FR",
+      "sourceId": "case"
+    },
+    {
+      "codeRome": "C1302",
+      "marketCode": "MA",
+      "sourceId": "case"
+    }
+  ],
+  "skills": [
+    {
+      "ogr": "124442",
+      "label": "Réaliser un suivi qualité des procédures de traitement d'opérations boursières",
+      "sourceId": "catalog"
+    }
+  ],
+  "steps": [
+    {
+      "code": "step-1",
+      "position": 1,
+      "instruction": "Repérez le dénominateur propre à chaque indicateur."
+    },
+    {
+      "code": "step-2",
+      "position": 2,
+      "instruction": "Calculez les taux initial et de résolution à partir des nombres fournis."
+    },
+    {
+      "code": "step-3",
+      "position": 3,
+      "instruction": "Choisissez une amélioration testable qui conserve la trace des anomalies."
+    }
+  ],
+  "prerequisites": [
+    {
+      "code": "previous",
+      "kind": "activity_passed",
+      "requiredActivityId": "market-correction-v1",
+      "skillOgr": null,
+      "label": "Préparer un circuit de correction contrôlé",
+      "rationale": "Ce cas reprend les données et les contrôles exercés dans l’activité précédente. Ce lien est pédagogique et explicite.",
+      "sourceId": "case"
+    }
+  ],
+  "criteria": [
+    {
+      "code": "initial",
+      "position": 1,
+      "label": "Calculer le taux initial",
+      "prompt": "Quel est le taux initial d’anomalies ?",
+      "expectedBehavior": "20 / 200 × 100.",
+      "sourceId": "case"
+    },
+    {
+      "code": "resolution",
+      "position": 2,
+      "label": "Choisir le bon dénominateur",
+      "prompt": "Quel est le taux de résolution des anomalies le jour même ?",
+      "expectedBehavior": "15 / 20 × 100.",
+      "sourceId": "case"
+    },
+    {
+      "code": "improve",
+      "position": 3,
+      "label": "Proposer une amélioration vérifiable",
+      "prompt": "Quelle action permet de tester une amélioration sans masquer les anomalies ?",
+      "expectedBehavior": "Conserver les observations et comparer un correctif sur le même indicateur.",
+      "sourceId": "case"
+    }
+  ],
+  "options": [
+    {
+      "criterionCode": "improve",
+      "code": "hide",
+      "position": 1,
+      "label": "Supprimer les alertes encore ouvertes",
+      "isCorrect": false,
+      "feedback": "Cela change la mesure en masquant les observations."
+    },
+    {
+      "criterionCode": "improve",
+      "code": "declare",
+      "position": 2,
+      "label": "Déclarer toutes les anomalies résolues",
+      "isCorrect": false,
+      "feedback": "Cinq anomalies restent ouvertes dans les données du cas."
+    },
+    {
+      "criterionCode": "improve",
+      "code": "test",
+      "position": 3,
+      "label": "Analyser une cause, tester un correctif puis comparer les mêmes indicateurs",
+      "isCorrect": true,
+      "feedback": "Cette démarche conserve les traces et rend le résultat du test comparable."
+    },
+    {
+      "criterionCode": "improve",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    },
+    {
+      "criterionCode": "initial",
+      "code": "2.5",
+      "position": 1,
+      "label": "2,5 %",
+      "isCorrect": false,
+      "feedback": "2,5 % correspond aux 5 anomalies ouvertes sur 200, pas au taux initial."
+    },
+    {
+      "criterionCode": "initial",
+      "code": "10",
+      "position": 2,
+      "label": "10 %",
+      "isCorrect": true,
+      "feedback": "20 / 200 × 100 = 10 %."
+    },
+    {
+      "criterionCode": "initial",
+      "code": "20",
+      "position": 3,
+      "label": "20 %",
+      "isCorrect": false,
+      "feedback": "20 est le nombre d’anomalies ; le taux utilise aussi les 200 opérations."
+    },
+    {
+      "criterionCode": "initial",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    },
+    {
+      "criterionCode": "resolution",
+      "code": "75",
+      "position": 1,
+      "label": "75 %",
+      "isCorrect": true,
+      "feedback": "15 anomalies résolues sur 20 détectées donnent 75 %."
+    },
+    {
+      "criterionCode": "resolution",
+      "code": "7.5",
+      "position": 2,
+      "label": "7,5 %",
+      "isCorrect": false,
+      "feedback": "Le dénominateur est le nombre d’anomalies détectées (20), pas le nombre d’opérations (200)."
+    },
+    {
+      "criterionCode": "resolution",
+      "code": "15",
+      "position": 3,
+      "label": "15 %",
+      "isCorrect": false,
+      "feedback": "15 est un nombre d’anomalies ; le taux est 75 %."
+    },
+    {
+      "criterionCode": "resolution",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    }
+  ],
+  "levelTargets": [],
+  "hash": "8a981361948ed667095e8d827c22146c3e2caec6d8cc305dac8967829f8141fa"
+}

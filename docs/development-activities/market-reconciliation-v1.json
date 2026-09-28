@@ -1,0 +1,235 @@
+{
+  "activity": {
+    "id": "market-reconciliation-v1",
+    "key": "market-reconciliation",
+    "version": 1,
+    "title": "Rapprocher un lot d’opérations fictives",
+    "purpose": "Repérer un écart de montant et une opération absente en comparant deux relevés fournis.",
+    "output": "Un contrôle de lot avec trois constats sélectionnés.",
+    "limitations": "Exercice pilote PRAXIS, sans revue métier indépendante. Données fictives et règles propres au cas ; aucune règle réglementaire française ou marocaine, décision de crédit réelle, ni validation de compétence ou de niveau de carrière.",
+    "minutes": 20,
+    "materials": {
+      "rows": [
+        [
+          "O01",
+          "1 250",
+          "1 250"
+        ],
+        [
+          "O02",
+          "980",
+          "890"
+        ],
+        [
+          "O03",
+          "450",
+          "Absente"
+        ]
+      ],
+      "intro": "Même unité monétaire fictive pour tous les montants. Règle du cas : une référence doit apparaître une seule fois dans le registre, avec le même montant que dans le relevé source. Une valeur « absente » ne signifie pas zéro.",
+      "columns": [
+        "Référence",
+        "Relevé source",
+        "Registre"
+      ]
+    },
+    "author": "praxis-original-practice",
+    "status": "pilot",
+    "contentHash": "ac8902247ac4c2bc5febfa7fabaacfb3400cf4ae521ce714206fbd8dbb68fc9c",
+    "reviewer": null,
+    "reviewedAt": null
+  },
+  "sources": [
+    {
+      "id": "case",
+      "title": "Cas pédagogique original PRAXIS",
+      "publisher": "PRAXIS",
+      "url": null,
+      "reference": "database/development-activities.mjs",
+      "kind": "authored_exercise",
+      "limitations": "Exercice pilote PRAXIS, sans revue métier indépendante. Données fictives et règles propres au cas ; aucune règle réglementaire française ou marocaine, décision de crédit réelle, ni validation de compétence ou de niveau de carrière."
+    },
+    {
+      "id": "catalog",
+      "title": "Lien métier-compétence du catalogue",
+      "publisher": "France Travail",
+      "url": "https://www.francetravail.fr/employeur/vos-recrutements/le-rome-et-les-fiches-metiers.html",
+      "reference": "rome:e539ca52-8933-4181-b5b1-6b3114bbd0c1:C1301:item:121569; rome:e539ca52-8933-4181-b5b1-6b3114bbd0c1:C1302:item:121569",
+      "kind": "occupation_catalog",
+      "limitations": "Le catalogue confirme le lien métier-compétence, pas la qualité pédagogique de cet exercice ni une maîtrise après réussite. Les rattachements locaux France/Maroc restent des périmètres pilotes."
+    }
+  ],
+  "scopes": [
+    {
+      "codeRome": "C1301",
+      "marketCode": "FR",
+      "sourceId": "case"
+    },
+    {
+      "codeRome": "C1301",
+      "marketCode": "MA",
+      "sourceId": "case"
+    },
+    {
+      "codeRome": "C1302",
+      "marketCode": "FR",
+      "sourceId": "case"
+    },
+    {
+      "codeRome": "C1302",
+      "marketCode": "MA",
+      "sourceId": "case"
+    }
+  ],
+  "skills": [
+    {
+      "ogr": "121569",
+      "label": "Contrôler la conformité de traitement des opérations boursières",
+      "sourceId": "catalog"
+    }
+  ],
+  "steps": [
+    {
+      "code": "step-1",
+      "position": 1,
+      "instruction": "Comparez les références une par une entre le relevé et le registre."
+    },
+    {
+      "code": "step-2",
+      "position": 2,
+      "instruction": "Calculez l’écart de O02 et identifiez le statut de O03."
+    },
+    {
+      "code": "step-3",
+      "position": 3,
+      "instruction": "Comptez les anomalies avant de décider si le lot respecte la règle fournie."
+    }
+  ],
+  "prerequisites": [],
+  "criteria": [
+    {
+      "code": "difference",
+      "position": 1,
+      "label": "Mesurer l’écart",
+      "prompt": "De combien le montant de O02 est-il inférieur au relevé source ?",
+      "expectedBehavior": "Calculer 980 − 890.",
+      "sourceId": "case"
+    },
+    {
+      "code": "missing",
+      "position": 2,
+      "label": "Identifier l’absence",
+      "prompt": "Quel constat décrit O03 ?",
+      "expectedBehavior": "Distinguer une donnée absente d’un montant nul.",
+      "sourceId": "case"
+    },
+    {
+      "code": "batch",
+      "position": 3,
+      "label": "Contrôler le lot",
+      "prompt": "Combien d’anomalies ce lot comporte-t-il selon la règle donnée ?",
+      "expectedBehavior": "Compte séparé de l’écart O02 et de l’absence O03.",
+      "sourceId": "case"
+    }
+  ],
+  "options": [
+    {
+      "criterionCode": "batch",
+      "code": "one",
+      "position": 1,
+      "label": "Une : seulement O02",
+      "isCorrect": false,
+      "feedback": "L’absence de O03 est aussi une anomalie."
+    },
+    {
+      "criterionCode": "batch",
+      "code": "three",
+      "position": 2,
+      "label": "Trois : toutes les opérations",
+      "isCorrect": false,
+      "feedback": "O01 concorde ; seules O02 et O03 ont une anomalie."
+    },
+    {
+      "criterionCode": "batch",
+      "code": "two",
+      "position": 3,
+      "label": "Deux : O02 et O03",
+      "isCorrect": true,
+      "feedback": "O02 a un écart de montant ; O03 est absente. Le lot doit être clarifié."
+    },
+    {
+      "criterionCode": "batch",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    },
+    {
+      "criterionCode": "difference",
+      "code": "zero",
+      "position": 1,
+      "label": "0",
+      "isCorrect": false,
+      "feedback": "Les deux montants diffèrent de 90."
+    },
+    {
+      "criterionCode": "difference",
+      "code": "90",
+      "position": 2,
+      "label": "90",
+      "isCorrect": true,
+      "feedback": "980 − 890 = 90."
+    },
+    {
+      "criterionCode": "difference",
+      "code": "190",
+      "position": 3,
+      "label": "190",
+      "isCorrect": false,
+      "feedback": "La différence est 90, pas 190."
+    },
+    {
+      "criterionCode": "difference",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    },
+    {
+      "criterionCode": "missing",
+      "code": "absent",
+      "position": 1,
+      "label": "Présente dans la source, absente du registre",
+      "isCorrect": true,
+      "feedback": "La ligne source existe mais aucune inscription correspondante n’est fournie."
+    },
+    {
+      "criterionCode": "missing",
+      "code": "zero",
+      "position": 2,
+      "label": "Son montant est nul",
+      "isCorrect": false,
+      "feedback": "Absente ne signifie pas zéro."
+    },
+    {
+      "criterionCode": "missing",
+      "code": "valid",
+      "position": 3,
+      "label": "Les deux relevés concordent",
+      "isCorrect": false,
+      "feedback": "O03 n’a pas de ligne correspondante dans le registre."
+    },
+    {
+      "criterionCode": "missing",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    }
+  ],
+  "levelTargets": [],
+  "hash": "ac8902247ac4c2bc5febfa7fabaacfb3400cf4ae521ce714206fbd8dbb68fc9c"
+}

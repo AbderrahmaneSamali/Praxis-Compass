@@ -1,0 +1,240 @@
+{
+  "activity": {
+    "id": "agency-team-plan-v1",
+    "key": "agency-team-plan",
+    "version": 1,
+    "title": "Répartir le travail d’une équipe fictive",
+    "purpose": "Associer tâches, habilitations et capacité disponible dans un cas d’équipe.",
+    "output": "Un plan d’affectation et un arbitrage de charge choisis dans une grille.",
+    "limitations": "Exercice pilote PRAXIS, sans revue métier indépendante. Données fictives et règles propres au cas ; aucune règle réglementaire française ou marocaine, décision de crédit réelle, ni validation de compétence ou de niveau de carrière.",
+    "minutes": 25,
+    "materials": {
+      "rows": [
+        [
+          "Ana",
+          "Préparation ; accompagnement",
+          "120 min"
+        ],
+        [
+          "Bilal",
+          "Contrôle",
+          "60 min"
+        ],
+        [
+          "Chloé",
+          "Apprentissage accompagné",
+          "60 min"
+        ],
+        [
+          "Lot à préparer",
+          "60 min",
+          "—"
+        ],
+        [
+          "Lot à contrôler",
+          "45 min",
+          "—"
+        ],
+        [
+          "Accompagnement de Chloé",
+          "30 min pour Ana et Chloé",
+          "—"
+        ]
+      ],
+      "intro": "Règle propre au cas : la préparation et le contrôle doivent être réalisés par deux personnes distinctes et habilitées. Ana accompagne aussi Chloé pendant 30 minutes. Aucun critère personnel ou appréciation d’un salarié réel n’est utilisé.",
+      "columns": [
+        "Personne / tâche",
+        "Habilitation / durée",
+        "Temps disponible"
+      ]
+    },
+    "author": "praxis-original-practice",
+    "status": "pilot",
+    "contentHash": "2750e0ccb7293d3b354df816a689ef92f1fd00d0d58b6631fd40e03c2a84068b",
+    "reviewer": null,
+    "reviewedAt": null
+  },
+  "sources": [
+    {
+      "id": "case",
+      "title": "Cas pédagogique original PRAXIS",
+      "publisher": "PRAXIS",
+      "url": null,
+      "reference": "database/development-activities.mjs",
+      "kind": "authored_exercise",
+      "limitations": "Exercice pilote PRAXIS, sans revue métier indépendante. Données fictives et règles propres au cas ; aucune règle réglementaire française ou marocaine, décision de crédit réelle, ni validation de compétence ou de niveau de carrière."
+    },
+    {
+      "id": "catalog",
+      "title": "Lien métier-compétence du catalogue",
+      "publisher": "France Travail",
+      "url": "https://www.francetravail.fr/employeur/vos-recrutements/le-rome-et-les-fiches-metiers.html",
+      "reference": "rome:e539ca52-8933-4181-b5b1-6b3114bbd0c1:C1207:item:300440",
+      "kind": "occupation_catalog",
+      "limitations": "Le catalogue confirme le lien métier-compétence, pas la qualité pédagogique de cet exercice ni une maîtrise après réussite. Les rattachements locaux France/Maroc restent des périmètres pilotes."
+    }
+  ],
+  "scopes": [
+    {
+      "codeRome": "C1207",
+      "marketCode": "FR",
+      "sourceId": "case"
+    },
+    {
+      "codeRome": "C1207",
+      "marketCode": "MA",
+      "sourceId": "case"
+    }
+  ],
+  "skills": [
+    {
+      "ogr": "300440",
+      "label": "Animer, coordonner une équipe",
+      "sourceId": "catalog"
+    }
+  ],
+  "steps": [
+    {
+      "code": "step-1",
+      "position": 1,
+      "instruction": "Associez chaque tâche à une personne disposant de l’habilitation indiquée."
+    },
+    {
+      "code": "step-2",
+      "position": 2,
+      "instruction": "Réservez les 30 minutes d’accompagnement pour Ana et Chloé."
+    },
+    {
+      "code": "step-3",
+      "position": 3,
+      "instruction": "Calculez la capacité restante d’Ana puis examinez une demande supplémentaire de 80 minutes."
+    }
+  ],
+  "prerequisites": [],
+  "criteria": [
+    {
+      "code": "roles",
+      "position": 1,
+      "label": "Respecter les habilitations",
+      "prompt": "Quelle affectation respecte le cas ?",
+      "expectedBehavior": "Séparer les rôles et conserver l’accompagnement.",
+      "sourceId": "case"
+    },
+    {
+      "code": "capacity",
+      "position": 2,
+      "label": "Calculer la charge restante",
+      "prompt": "Combien de minutes reste-t-il à Ana après préparation et accompagnement ?",
+      "expectedBehavior": "120 − 60 − 30.",
+      "sourceId": "case"
+    },
+    {
+      "code": "arbitrate",
+      "position": 3,
+      "label": "Arbitrer une surcharge",
+      "prompt": "Une nouvelle tâche de 80 minutes arrive pour Ana. Quel constat est correct ?",
+      "expectedBehavior": "Comparer la demande à la capacité restante, sans supprimer les contrôles.",
+      "sourceId": "case"
+    }
+  ],
+  "options": [
+    {
+      "criterionCode": "arbitrate",
+      "code": "replan",
+      "position": 1,
+      "label": "Il manque 50 minutes ; replanifier ou demander un arbitrage",
+      "isCorrect": true,
+      "feedback": "80 − 30 = 50 minutes manquantes. Le contrôle et l’accompagnement restent prévus."
+    },
+    {
+      "criterionCode": "arbitrate",
+      "code": "fits",
+      "position": 2,
+      "label": "La tâche tient dans les 30 minutes restantes",
+      "isCorrect": false,
+      "feedback": "La demande dépasse la capacité restante de 50 minutes."
+    },
+    {
+      "criterionCode": "arbitrate",
+      "code": "remove-control",
+      "position": 3,
+      "label": "Supprimer le contrôle pour tenir le délai",
+      "isCorrect": false,
+      "feedback": "Cela ne respecte pas la règle de contrôle distinct donnée dans le cas."
+    },
+    {
+      "criterionCode": "arbitrate",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    },
+    {
+      "criterionCode": "capacity",
+      "code": "60",
+      "position": 1,
+      "label": "60 minutes",
+      "isCorrect": false,
+      "feedback": "L’accompagnement mobilise aussi 30 minutes d’Ana."
+    },
+    {
+      "criterionCode": "capacity",
+      "code": "90",
+      "position": 2,
+      "label": "90 minutes",
+      "isCorrect": false,
+      "feedback": "La préparation de 60 minutes doit aussi être soustraite."
+    },
+    {
+      "criterionCode": "capacity",
+      "code": "30",
+      "position": 3,
+      "label": "30 minutes",
+      "isCorrect": true,
+      "feedback": "120 − 60 − 30 = 30 minutes."
+    },
+    {
+      "criterionCode": "capacity",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    },
+    {
+      "criterionCode": "roles",
+      "code": "ana-all",
+      "position": 1,
+      "label": "Ana prépare et contrôle ; Chloé travaille seule",
+      "isCorrect": false,
+      "feedback": "Ana n’est pas habilitée au contrôle et Chloé doit être accompagnée."
+    },
+    {
+      "criterionCode": "roles",
+      "code": "split",
+      "position": 2,
+      "label": "Ana prépare, Bilal contrôle, Chloé apprend avec Ana",
+      "isCorrect": true,
+      "feedback": "Les habilitations et la séparation des rôles sont respectées."
+    },
+    {
+      "criterionCode": "roles",
+      "code": "chloe-controls",
+      "position": 3,
+      "label": "Ana prépare, Chloé contrôle, Bilal accompagne",
+      "isCorrect": false,
+      "feedback": "Chloé n’a pas l’habilitation de contrôle dans le cas fourni."
+    },
+    {
+      "criterionCode": "roles",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    }
+  ],
+  "levelTargets": [],
+  "hash": "2750e0ccb7293d3b354df816a689ef92f1fd00d0d58b6631fd40e03c2a84068b"
+}

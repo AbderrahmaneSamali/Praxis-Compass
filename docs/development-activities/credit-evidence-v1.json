@@ -1,0 +1,235 @@
+{
+  "activity": {
+    "id": "credit-evidence-v1",
+    "key": "credit-evidence",
+    "version": 1,
+    "title": "Préparer un dossier de crédit fictif",
+    "purpose": "Distinguer les données connues, le reste mensuel calculable et les pièces encore manquantes.",
+    "output": "Un contrôle de dossier en trois décisions structurées.",
+    "limitations": "Exercice pilote PRAXIS, sans revue métier indépendante. Données fictives et règles propres au cas ; aucune règle réglementaire française ou marocaine, décision de crédit réelle, ni validation de compétence ou de niveau de carrière.",
+    "minutes": 20,
+    "materials": {
+      "rows": [
+        [
+          "Revenu mensuel",
+          "4 000",
+          "Reçue"
+        ],
+        [
+          "Charges mensuelles hors engagements",
+          "3 000",
+          "Reçue"
+        ],
+        [
+          "Engagements en cours",
+          "Non renseignés",
+          "Absente"
+        ]
+      ],
+      "intro": "Cas A, en unités monétaires fictives. La procédure de cet exercice demande une pièce de revenu, un justificatif de charges et la liste des engagements avant toute analyse complète. Aucune décision de prêt n’est demandée.",
+      "columns": [
+        "Élément",
+        "Donnée reçue",
+        "Pièce"
+      ]
+    },
+    "author": "praxis-original-practice",
+    "status": "pilot",
+    "contentHash": "7fe2b2f9eb4539a3c6dca04cf93408df22817d0401e815db7402d33f8b412127",
+    "reviewer": null,
+    "reviewedAt": null
+  },
+  "sources": [
+    {
+      "id": "case",
+      "title": "Cas pédagogique original PRAXIS",
+      "publisher": "PRAXIS",
+      "url": null,
+      "reference": "database/development-activities.mjs",
+      "kind": "authored_exercise",
+      "limitations": "Exercice pilote PRAXIS, sans revue métier indépendante. Données fictives et règles propres au cas ; aucune règle réglementaire française ou marocaine, décision de crédit réelle, ni validation de compétence ou de niveau de carrière."
+    },
+    {
+      "id": "catalog",
+      "title": "Lien métier-compétence du catalogue",
+      "publisher": "France Travail",
+      "url": "https://www.francetravail.fr/employeur/vos-recrutements/le-rome-et-les-fiches-metiers.html",
+      "reference": "rome:e539ca52-8933-4181-b5b1-6b3114bbd0c1:C1202:item:123187; rome:e539ca52-8933-4181-b5b1-6b3114bbd0c1:C1214:item:123187",
+      "kind": "occupation_catalog",
+      "limitations": "Le catalogue confirme le lien métier-compétence, pas la qualité pédagogique de cet exercice ni une maîtrise après réussite. Les rattachements locaux France/Maroc restent des périmètres pilotes."
+    }
+  ],
+  "scopes": [
+    {
+      "codeRome": "C1202",
+      "marketCode": "FR",
+      "sourceId": "case"
+    },
+    {
+      "codeRome": "C1202",
+      "marketCode": "MA",
+      "sourceId": "case"
+    },
+    {
+      "codeRome": "C1214",
+      "marketCode": "FR",
+      "sourceId": "case"
+    },
+    {
+      "codeRome": "C1214",
+      "marketCode": "MA",
+      "sourceId": "case"
+    }
+  ],
+  "skills": [
+    {
+      "ogr": "123187",
+      "label": "Evaluer la solvabilité d'un créditeur et les risques",
+      "sourceId": "catalog"
+    }
+  ],
+  "steps": [
+    {
+      "code": "step-1",
+      "position": 1,
+      "instruction": "Repérez les données accompagnées d’une pièce et la donnée encore inconnue."
+    },
+    {
+      "code": "step-2",
+      "position": 2,
+      "instruction": "Calculez revenu moins charges connues. Ce résultat ne tient pas compte des engagements manquants."
+    },
+    {
+      "code": "step-3",
+      "position": 3,
+      "instruction": "Choisissez la pièce à demander et la prochaine action autorisée par la règle de ce cas."
+    }
+  ],
+  "prerequisites": [],
+  "criteria": [
+    {
+      "code": "remainder",
+      "position": 1,
+      "label": "Calculer avec les données connues",
+      "prompt": "Quel reste mensuel peut-on calculer avant les engagements inconnus ?",
+      "expectedBehavior": "Soustraire les seules charges connues sans traiter une donnée manquante comme zéro.",
+      "sourceId": "case"
+    },
+    {
+      "code": "missing",
+      "position": 2,
+      "label": "Identifier la pièce manquante",
+      "prompt": "Que faut-il obtenir pour compléter ce dossier selon la règle donnée ?",
+      "expectedBehavior": "Identifier le manque plutôt que supposer l’absence d’engagements.",
+      "sourceId": "case"
+    },
+    {
+      "code": "next",
+      "position": 3,
+      "label": "Respecter les limites du dossier",
+      "prompt": "Quelle est la prochaine action adaptée à ce cas ?",
+      "expectedBehavior": "Séparer préparation du dossier et décision de prêt.",
+      "sourceId": "case"
+    }
+  ],
+  "options": [
+    {
+      "criterionCode": "missing",
+      "code": "commitments",
+      "position": 1,
+      "label": "La liste documentée des engagements en cours",
+      "isCorrect": true,
+      "feedback": "Cette seule catégorie n’est ni renseignée ni documentée dans le cas."
+    },
+    {
+      "criterionCode": "missing",
+      "code": "income",
+      "position": 2,
+      "label": "Une seconde copie du revenu déjà justifié",
+      "isCorrect": false,
+      "feedback": "Le revenu est déjà documenté ; la liste des engagements reste manquante."
+    },
+    {
+      "criterionCode": "missing",
+      "code": "nothing",
+      "position": 3,
+      "label": "Aucune pièce, absence signifie zéro",
+      "isCorrect": false,
+      "feedback": "Une donnée absente n’est pas une valeur nulle."
+    },
+    {
+      "criterionCode": "missing",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    },
+    {
+      "criterionCode": "next",
+      "code": "approve",
+      "position": 1,
+      "label": "Accorder directement le prêt",
+      "isCorrect": false,
+      "feedback": "Le cas ne demande pas une décision de prêt et les engagements restent inconnus."
+    },
+    {
+      "criterionCode": "next",
+      "code": "reject",
+      "position": 2,
+      "label": "Refuser automatiquement le prêt",
+      "isCorrect": false,
+      "feedback": "Une pièce absente ne justifie aucune décision automatique dans ce cas."
+    },
+    {
+      "criterionCode": "next",
+      "code": "request",
+      "position": 3,
+      "label": "Demander la liste des engagements puis reprendre l’analyse",
+      "isCorrect": true,
+      "feedback": "Le manque est identifié et l’analyse reste ouverte jusqu’à réception de la pièce."
+    },
+    {
+      "criterionCode": "next",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    },
+    {
+      "criterionCode": "remainder",
+      "code": "7000",
+      "position": 1,
+      "label": "7 000",
+      "isCorrect": false,
+      "feedback": "Les charges se soustraient au revenu : 4 000 − 3 000 = 1 000."
+    },
+    {
+      "criterionCode": "remainder",
+      "code": "1000",
+      "position": 2,
+      "label": "1 000, avant engagements inconnus",
+      "isCorrect": true,
+      "feedback": "4 000 − 3 000 = 1 000. Les engagements manquants empêchent une conclusion complète."
+    },
+    {
+      "criterionCode": "remainder",
+      "code": "zero",
+      "position": 3,
+      "label": "0, car le dossier est incomplet",
+      "isCorrect": false,
+      "feedback": "Un dossier incomplet n’empêche pas ce calcul partiel : 1 000. Il empêche une conclusion sur le reste final."
+    },
+    {
+      "criterionCode": "remainder",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    }
+  ],
+  "levelTargets": [],
+  "hash": "7fe2b2f9eb4539a3c6dca04cf93408df22817d0401e815db7402d33f8b412127"
+}

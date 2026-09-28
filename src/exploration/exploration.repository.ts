@@ -16,12 +16,14 @@ export class ExplorationRepository {
 
   async profile(learnerId: string): Promise<StartingProfile> {
     const [result, confirmed] = await Promise.all([
-      this.pool.query<{ current_role_id: string | null; current_rome_code: string | null; current_rome_label: string | null;
+      this.pool.query<{ current_role_id: string | null; current_rome_code: string | null; current_rome_label: string | null; preferred_domain_code: string | null; preferred_domain_label: string | null;
         experience: string; interests: string; constraints_text: string; updated_at: Date }>(
         `SELECT p.current_role_id,p.current_rome_code,p.experience,p.interests,p.constraints_text,p.updated_at,
+          p.preferred_domain_code,dv.domain_label AS preferred_domain_label,
           v.preferred_label AS current_rome_label FROM praxis.exploration_profile p
          LEFT JOIN praxis.source_releases r ON r.source='rome' AND r.is_active
          LEFT JOIN praxis.rome_occupation_versions v ON v.release_id=r.id AND v.code_rome=p.current_rome_code
+         LEFT JOIN praxis.rome_professional_domain_versions dv ON dv.release_id=r.id AND dv.domain_code=p.preferred_domain_code
          WHERE p.learner_id=$1`, [learnerId]),
       this.pool.query<{ centre_code: number }>(
         'SELECT centre_code FROM praxis.exploration_confirmed_interest WHERE learner_id=$1 ORDER BY centre_code', [learnerId]),
@@ -29,6 +31,7 @@ export class ExplorationRepository {
     const row = result.rows[0];
     return { learnerId, currentRoleId: row?.current_role_id ?? null,
       currentRomeCode: row?.current_rome_code ?? null, currentRomeLabel: row?.current_rome_label ?? null,
+      preferredDomainCode: row?.preferred_domain_code ?? null, preferredDomainLabel: row?.preferred_domain_label ?? null,
       confirmedInterestCodes: confirmed.rows.map(item => item.centre_code), experience: row?.experience ?? '',
       interests: row?.interests ?? '', constraints: row?.constraints_text ?? '', updatedAt: row?.updated_at?.toISOString() ?? null };
   }
@@ -39,12 +42,13 @@ export class ExplorationRepository {
     try {
       await client.query('BEGIN');
       await client.query(`INSERT INTO praxis.exploration_profile
-        (learner_id,current_rome_code,experience,interests,constraints_text)
-        VALUES ($1,$2,$3,$4,$5)
+        (learner_id,current_rome_code,experience,interests,constraints_text,preferred_domain_code)
+        VALUES ($1,$2,$3,$4,$5,$6)
         ON CONFLICT (learner_id) DO UPDATE SET current_rome_code=EXCLUDED.current_rome_code,
+          preferred_domain_code=EXCLUDED.preferred_domain_code,
           experience=EXCLUDED.experience,interests=EXCLUDED.interests,
           constraints_text=EXCLUDED.constraints_text,updated_at=clock_timestamp()`,
-        [profile.learnerId, profile.currentRomeCode ?? null, profile.experience, profile.interests, profile.constraints]);
+        [profile.learnerId, profile.currentRomeCode ?? null, profile.experience, profile.interests, profile.constraints, profile.preferredDomainCode ?? null]);
       await client.query('DELETE FROM praxis.exploration_confirmed_interest WHERE learner_id=$1', [profile.learnerId]);
       for (const code of centres) {
         await client.query('INSERT INTO praxis.exploration_confirmed_interest(learner_id,centre_code) VALUES ($1,$2)',
@@ -57,22 +61,24 @@ export class ExplorationRepository {
   }
 
   async romeDirections(profile: StartingProfile): Promise<RoleDirection[]> {
-    if (!profile.currentRomeCode && !(profile.confirmedInterestCodes?.length)) return [];
+    if (!profile.preferredDomainCode && !profile.currentRomeCode && !(profile.confirmedInterestCodes?.length)) return [];
     const map = await this.rome.possibilities({
       originCodeRome: profile.currentRomeCode ?? undefined,
-      interestCentres: profile.confirmedInterestCodes ?? [], limit: 8,
+      domainCode: profile.preferredDomainCode ?? undefined,
+      interestCentres: profile.confirmedInterestCodes ?? [], limit: null, includeOrigin: true,
     });
     const unique = new Map<string, typeof map.groups.mobility.items[number]>();
-    for (const group of [map.groups.mobility, map.groups.interests, map.groups.sharedSkills]) {
+    for (const group of [map.groups.domain, map.groups.mobility, map.groups.interests, map.groups.sharedSkills]) {
       for (const item of group.items) if (!unique.has(item.codeRome)) unique.set(item.codeRome, item);
     }
     const explorer = this.rome;
-    return Promise.all([...unique.values()].map(async (item): Promise<RoleDirection> => {
-      const [occupation, job] = await Promise.all([
-        explorer.occupation(item.codeRome), explorer.requirements(item.codeRome),
-      ]);
+    const codes = [...unique.keys()];
+    const [profiles, jobs] = await Promise.all([explorer.occupations(codes), explorer.requirementsFor(codes)]);
+    const byCode = new Map(profiles.map(item => [item.codeRome, item]));
+    return [...unique.values()].map((item): RoleDirection => {
+      const occupation = byCode.get(item.codeRome), job = jobs.get(item.codeRome);
       if (!occupation || !job) throw new Error(`ROME direction ${item.codeRome} disappeared`);
-      const source: SourceReference = { label: 'France Travail ROME v61',
+      const source: SourceReference = { label: 'Fiches métiers de France Travail',
         reference: `rome:${map.releaseId}:${item.codeRome}`, reviewStatus: 'official_source' };
       const items = [
         ...job.savoirFaire.flatMap(group => group.subgroups.flatMap(sub => sub.items.map(entry => ({...entry, kind: 'savoir_faire' as const})))),
@@ -90,25 +96,26 @@ export class ExplorationRepository {
         description: occupation.definition.join(' '), responsibilities: occupation.definition,
         interestTags: [], requirements, workContexts, reasons: item.reasons, romeProfile: occupation,
         sources: [source] };
-    }));
+    });
   }
 
   async romeConfirmations(learnerId: string): Promise<RomeConfirmation[]> {
     const result = await this.pool.query<{ id: string; ogr: string; response: RomeConfirmation['response']; work_example: string }>(
-      `SELECT id,code_ogr::text AS ogr,response,work_example FROM praxis.rome_requirement_confirmation
-       WHERE learner_id=$1 AND superseded_by IS NULL ORDER BY recorded_at DESC,id DESC`, [learnerId]);
+      `SELECT q.id,q.code_ogr::text AS ogr,q.response,q.work_example FROM praxis.rome_requirement_confirmation q
+       JOIN praxis.source_releases r ON r.id=q.release_id AND r.source='rome' AND r.is_active
+       WHERE q.learner_id=$1 AND q.superseded_by IS NULL ORDER BY q.recorded_at DESC,q.id DESC`, [learnerId]);
     return result.rows.map(row => ({id:row.id,ogr:row.ogr,response:row.response,workExample:row.work_example}));
   }
 
   async confirmRomeRequirement(learnerId: string, ogr: string, releaseId: string,
-    response: RomeConfirmation['response'], workExample: string): Promise<void> {
+    response: RomeConfirmation['response'], workExample: string, practiceContextId: string | null = null): Promise<void> {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
       await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [learnerId]);
       const inserted = await client.query<{ id: string }>(
-        `INSERT INTO praxis.rome_requirement_confirmation(learner_id,code_ogr,release_id,response,work_example)
-         VALUES ($1,$2,$3,$4,$5) RETURNING id`, [learnerId,ogr,releaseId,response,workExample]);
+        `INSERT INTO praxis.rome_requirement_confirmation(learner_id,code_ogr,release_id,response,work_example,practice_context_id)
+         VALUES ($1,$2,$3,$4,$5,$6) RETURNING id`, [learnerId,ogr,releaseId,response,workExample,practiceContextId]);
       await client.query(`UPDATE praxis.rome_requirement_confirmation SET superseded_by=$1
         WHERE learner_id=$2 AND code_ogr=$3 AND superseded_by IS NULL AND id<>$1`,
         [inserted.rows[0]!.id,learnerId,ogr]);
@@ -208,13 +215,13 @@ export class ExplorationRepository {
       VALUES ($1,$2,$3) ON CONFLICT DO NOTHING`, [learnerId,directionId,action.id]);
   }
 
-  async feedback(learnerId: string, directionId: string | null, useful: boolean, comment: string): Promise<void> {
+  async feedback(learnerId: string, directionId: string | null, useful: boolean, comment: string, reasonId: string | null = null): Promise<void> {
     if (directionId === null || /^rome:[A-Z][0-9]{4}$/.test(directionId)) {
-      await this.pool.query(`INSERT INTO praxis.exploration_rome_feedback(learner_id,code_rome,useful,comment)
-        VALUES ($1,$2,$3,$4)`,[learnerId,directionId?.slice(5) ?? null,useful,comment]);
+      await this.pool.query(`INSERT INTO praxis.exploration_rome_feedback(learner_id,code_rome,useful,comment,reason_id)
+        VALUES ($1,$2,$3,$4,$5)`,[learnerId,directionId?.slice(5) ?? null,useful,comment,reasonId]);
       return;
     }
-    await this.pool.query(`INSERT INTO praxis.exploration_feedback(learner_id,direction_id,useful,comment)
-      VALUES ($1,$2,$3,$4)`, [learnerId,directionId,useful,comment]);
+    await this.pool.query(`INSERT INTO praxis.exploration_feedback(learner_id,direction_id,useful,comment,reason_id)
+      VALUES ($1,$2,$3,$4,$5)`, [learnerId,directionId,useful,comment,reasonId]);
   }
 }

@@ -1,0 +1,245 @@
+{
+  "activity": {
+    "id": "market-correction-v1",
+    "key": "market-correction",
+    "version": 1,
+    "title": "Préparer un circuit de correction contrôlé",
+    "purpose": "Choisir la correction proposée, la pièce manquante et une validation distincte.",
+    "output": "Une fiche d’incident structurée pour deux anomalies.",
+    "limitations": "Exercice pilote PRAXIS, sans revue métier indépendante. Données fictives et règles propres au cas ; aucune règle réglementaire française ou marocaine, décision de crédit réelle, ni validation de compétence ou de niveau de carrière.",
+    "minutes": 25,
+    "materials": {
+      "rows": [
+        [
+          "O02",
+          "Source 980 ; registre 890",
+          "Préparateur : proposer le montant corrigé"
+        ],
+        [
+          "O03",
+          "Source 450 ; registre absent",
+          "Préparateur : rapprocher la pièce"
+        ],
+        [
+          "Validation",
+          "Après préparation",
+          "Autre personne habilitée"
+        ]
+      ],
+      "intro": "Suite du lot O01–O03. Dans cette procédure fictive, le préparateur propose une correction ; une autre personne habilitée la valide. Une opération absente exige une pièce source rapprochée avant proposition d’enregistrement. Aucun accès à un système réel n’est requis.",
+      "columns": [
+        "Anomalie",
+        "État",
+        "Responsabilité"
+      ]
+    },
+    "author": "praxis-original-practice",
+    "status": "pilot",
+    "contentHash": "addd9a756662269346a1f1a17211beb9f270511d2f7568dff13bda552bdb7f11",
+    "reviewer": null,
+    "reviewedAt": null
+  },
+  "sources": [
+    {
+      "id": "case",
+      "title": "Cas pédagogique original PRAXIS",
+      "publisher": "PRAXIS",
+      "url": null,
+      "reference": "database/development-activities.mjs",
+      "kind": "authored_exercise",
+      "limitations": "Exercice pilote PRAXIS, sans revue métier indépendante. Données fictives et règles propres au cas ; aucune règle réglementaire française ou marocaine, décision de crédit réelle, ni validation de compétence ou de niveau de carrière."
+    },
+    {
+      "id": "catalog",
+      "title": "Lien métier-compétence du catalogue",
+      "publisher": "France Travail",
+      "url": "https://www.francetravail.fr/employeur/vos-recrutements/le-rome-et-les-fiches-metiers.html",
+      "reference": "rome:e539ca52-8933-4181-b5b1-6b3114bbd0c1:C1301:item:122031; rome:e539ca52-8933-4181-b5b1-6b3114bbd0c1:C1302:item:122031",
+      "kind": "occupation_catalog",
+      "limitations": "Le catalogue confirme le lien métier-compétence, pas la qualité pédagogique de cet exercice ni une maîtrise après réussite. Les rattachements locaux France/Maroc restent des périmètres pilotes."
+    }
+  ],
+  "scopes": [
+    {
+      "codeRome": "C1301",
+      "marketCode": "FR",
+      "sourceId": "case"
+    },
+    {
+      "codeRome": "C1301",
+      "marketCode": "MA",
+      "sourceId": "case"
+    },
+    {
+      "codeRome": "C1302",
+      "marketCode": "FR",
+      "sourceId": "case"
+    },
+    {
+      "codeRome": "C1302",
+      "marketCode": "MA",
+      "sourceId": "case"
+    }
+  ],
+  "skills": [
+    {
+      "ogr": "122031",
+      "label": "Appliquer des mesures correctives dans le traitement des opérations boursières",
+      "sourceId": "catalog"
+    }
+  ],
+  "steps": [
+    {
+      "code": "step-1",
+      "position": 1,
+      "instruction": "Reprenez les deux anomalies détectées dans le premier exercice."
+    },
+    {
+      "code": "step-2",
+      "position": 2,
+      "instruction": "Pour O02, choisissez le montant à proposer ; pour O03, choisissez la vérification préalable."
+    },
+    {
+      "code": "step-3",
+      "position": 3,
+      "instruction": "Sélectionnez un circuit respectant la séparation préparation/validation imposée par ce cas."
+    }
+  ],
+  "prerequisites": [
+    {
+      "code": "previous",
+      "kind": "activity_passed",
+      "requiredActivityId": "market-reconciliation-v1",
+      "skillOgr": null,
+      "label": "Rapprocher un lot d’opérations fictives",
+      "rationale": "Ce cas reprend les données et les contrôles exercés dans l’activité précédente. Ce lien est pédagogique et explicite.",
+      "sourceId": "case"
+    }
+  ],
+  "criteria": [
+    {
+      "code": "amount",
+      "position": 1,
+      "label": "Proposer le bon montant",
+      "prompt": "Quel montant proposer pour O02, après rapprochement de la source ?",
+      "expectedBehavior": "Proposer 980 sans confondre le montant final et l’écart.",
+      "sourceId": "case"
+    },
+    {
+      "code": "document",
+      "position": 2,
+      "label": "Vérifier avant d’enregistrer",
+      "prompt": "Que faire d’abord pour O03 ?",
+      "expectedBehavior": "Rapprocher la pièce source avant toute proposition.",
+      "sourceId": "case"
+    },
+    {
+      "code": "review",
+      "position": 3,
+      "label": "Séparer les responsabilités",
+      "prompt": "Quel circuit est conforme à cette procédure fictive ?",
+      "expectedBehavior": "Faire valider par une autre personne habilitée.",
+      "sourceId": "case"
+    }
+  ],
+  "options": [
+    {
+      "criterionCode": "amount",
+      "code": "90",
+      "position": 1,
+      "label": "90",
+      "isCorrect": false,
+      "feedback": "90 est l’écart ; le montant final doit être 980."
+    },
+    {
+      "criterionCode": "amount",
+      "code": "980",
+      "position": 2,
+      "label": "980",
+      "isCorrect": true,
+      "feedback": "Le montant proposé reprend le relevé source rapproché."
+    },
+    {
+      "criterionCode": "amount",
+      "code": "1870",
+      "position": 3,
+      "label": "1 870",
+      "isCorrect": false,
+      "feedback": "Additionner source et registre ne constitue pas une correction."
+    },
+    {
+      "criterionCode": "amount",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    },
+    {
+      "criterionCode": "document",
+      "code": "erase",
+      "position": 1,
+      "label": "Supprimer la source pour faire disparaître l’écart",
+      "isCorrect": false,
+      "feedback": "Cela masquerait l’anomalie sans la résoudre."
+    },
+    {
+      "criterionCode": "document",
+      "code": "copy",
+      "position": 2,
+      "label": "Enregistrer immédiatement sans pièce rapprochée",
+      "isCorrect": false,
+      "feedback": "La procédure fournie exige le rapprochement de la pièce avant proposition."
+    },
+    {
+      "criterionCode": "document",
+      "code": "check",
+      "position": 3,
+      "label": "Rapprocher la pièce source puis préparer la proposition",
+      "isCorrect": true,
+      "feedback": "Cette action suit la condition explicitement donnée."
+    },
+    {
+      "criterionCode": "document",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    },
+    {
+      "criterionCode": "review",
+      "code": "separate",
+      "position": 1,
+      "label": "Un préparateur propose ; une autre personne habilitée valide",
+      "isCorrect": true,
+      "feedback": "Les rôles de préparation et de validation sont séparés."
+    },
+    {
+      "criterionCode": "review",
+      "code": "same",
+      "position": 2,
+      "label": "Le préparateur valide lui-même son travail",
+      "isCorrect": false,
+      "feedback": "La procédure exige une autre personne pour valider."
+    },
+    {
+      "criterionCode": "review",
+      "code": "none",
+      "position": 3,
+      "label": "Aucune validation après correction",
+      "isCorrect": false,
+      "feedback": "Une validation est explicitement requise dans le cas."
+    },
+    {
+      "criterionCode": "review",
+      "code": "unknown",
+      "position": 4,
+      "label": "Je ne sais pas encore",
+      "isCorrect": false,
+      "feedback": "Reprenez les données du cas et les étapes, puis réessayez. Ce résultat ne mesure pas votre maîtrise professionnelle."
+    }
+  ],
+  "levelTargets": [],
+  "hash": "addd9a756662269346a1f1a17211beb9f270511d2f7568dff13bda552bdb7f11"
+}

@@ -1,3 +1,4 @@
+import type { LearnerChoiceCatalog } from '../exploration/learner-choices.js';
 /**
  * The branching context survey.
  *
@@ -14,7 +15,7 @@
  * is the subset it must wait for before it can be asked.
  *
  * Question ids are mirrored in `praxis.context_survey_question` by migration
- * 062, so every stored answer references a registered question. Adding,
+ * 064, so every stored answer references a registered question. Adding,
  * removing or re-meaning a question needs a new survey version and a migration
  * that registers it.
  */
@@ -36,6 +37,7 @@ export type RecordedAnswer = Readonly<{
 export type SurveyFacts = Readonly<{
   /** The date the survey reasons with, fixed at session start so replays match. */
   today: string;
+  catalog?: LearnerChoiceCatalog;
   roleLabel: string | null;
   goalKind: 'role' | 'task';
   goalText: string | null;
@@ -194,16 +196,9 @@ export function effectiveHours(state: SurveyState) {
 }
 
 export function effectiveDeadline(state: SurveyState) {
+  const code = valueOf(state, 'deadline');
+  if (typeof code === 'string' && /^months_(1|3|6|12)$/.test(code)) return addMonths(state.facts.today, Number(code.split('_')[1]));
   return isoDateOf(state, 'deadline');
-}
-
-const UNKNOWN_OPTION: SurveyOption = {
-  value: 'unknown',
-  labelFr: 'Je ne sais pas encore',
-};
-
-function isTimeConstrained(state: SurveyState) {
-  return is(state, 'situation', 'employed', 'studying');
 }
 
 // ---------------------------------------------------------------------------
@@ -220,13 +215,7 @@ export const SURVEY_QUESTIONS: readonly SurveyQuestion[] = Object.freeze([
     priority: () => 100,
     prompt: () => 'Pourquoi maintenant ?',
     help: (state) => `Objectif : ${goalPhrase(state.facts)}`,
-    options: () => [
-      { value: 'career_change', labelFr: 'Changer de métier' },
-      { value: 'promotion', labelFr: 'Évoluer dans mon poste' },
-      { value: 'employer_required', labelFr: 'Mon employeur me le demande' },
-      { value: 'job_seeking', labelFr: 'Trouver un emploi' },
-      { value: 'exploration', labelFr: 'Explorer, sans urgence' },
-    ],
+    options: (state) => state.facts.catalog?.motivation ?? [],
     contextField: 'motivation',
   },
   {
@@ -238,12 +227,7 @@ export const SURVEY_QUESTIONS: readonly SurveyQuestion[] = Object.freeze([
     applies: () => true,
     priority: () => 95,
     prompt: () => 'Votre situation actuelle ?',
-    options: () => [
-      { value: 'employed', labelFr: 'En poste' },
-      { value: 'seeking', labelFr: 'En recherche d’emploi' },
-      { value: 'studying', labelFr: 'En études' },
-      { value: 'between_contracts', labelFr: 'Entre deux missions' },
-    ],
+    options: (state) => state.facts.catalog?.situation ?? [],
     // Evolving in, or being sent by, a current job means being employed.
     infer: (state) =>
       is(state, 'motivation', 'promotion', 'employer_required')
@@ -261,20 +245,7 @@ export const SURVEY_QUESTIONS: readonly SurveyQuestion[] = Object.freeze([
     priority: () => 80,
     prompt: () => 'Combien de temps pour explorer, chaque semaine ?',
     help: () => 'Temps que vous pourriez consacrer à votre exploration professionnelle.',
-    options: (state) => [
-      ...(isTimeConstrained(state) ? [1, 2, 4, 6] : [2, 4, 8, 12]).map(
-        (hours) => ({ value: String(hours), labelFr: `${hours} h` }),
-      ),
-      UNKNOWN_OPTION,
-    ],
-    freeInput: () => ({
-      kind: 'number',
-      min: 0.5,
-      max: 40,
-      step: 0.5,
-      unitFr: 'h / semaine',
-      labelFr: 'Autre',
-    }),
+    options: (state) => state.facts.catalog?.hours_per_week ?? [],
     contextField: 'time',
   },
   {
@@ -294,28 +265,7 @@ export const SURVEY_QUESTIONS: readonly SurveyQuestion[] = Object.freeze([
             is(state, 'situation', 'seeking', 'between_contracts')
           ? 'Prêt·e à postuler pour quand ?'
           : 'Quand souhaitez-vous décider ?',
-    options: (state) => {
-      const today = state.facts.today;
-      const dated = [1, 3, 6, 12].map((months) => {
-        const date = addMonths(today, months);
-        return {
-          value: date,
-          labelFr: months === 1 ? 'Dans 1 mois' : `Dans ${months} mois`,
-          detailFr: formatMonthFr(date),
-        };
-      });
-      const none = { value: 'none', labelFr: 'Pas d’échéance' };
-      // Someone exploring most likely has no date; offer that first.
-      return is(state, 'motivation', 'exploration')
-        ? [none, ...dated]
-        : [...dated, none];
-    },
-    freeInput: (state) => ({
-      kind: 'date',
-      min: addDays(state.facts.today, 1),
-      max: addMonths(state.facts.today, 60),
-      labelFr: 'Autre date',
-    }),
+    options: (state) => (state.facts.catalog?.deadline ?? []).map(option => ({...option, ...(option.value.startsWith('months_') ? {detailFr: formatMonthFr(addMonths(state.facts.today, Number(option.value.split('_')[1])))} : {})})),
     contextField: 'deadline',
   },
   {
@@ -329,34 +279,21 @@ export const SURVEY_QUESTIONS: readonly SurveyQuestion[] = Object.freeze([
     prompt: () => 'Déjà pratiqué ?',
     help: (state) =>
       `Des tâches liées à « ${goalPhrase(state.facts)} ». Cela ne fixe aucun niveau.`,
-    options: () => [
-      { value: 'never', labelFr: 'Jamais, je débute' },
-      { value: 'occasionally', labelFr: 'Un peu' },
-      { value: 'regularly', labelFr: 'Régulièrement' },
-    ],
+    options: (state) => state.facts.catalog?.practice_level ?? [],
     contextField: null,
   },
   {
-    id: 'recent_work_example',
-    recapFr: 'Exemple',
+    id: 'practice_context',
+    recapFr: 'Contexte de pratique',
     section: 'practice',
     selection: 'single',
     dependsOn: ['practice_level'],
     applies: (state) =>
       is(state, 'practice_level', 'occasionally', 'regularly'),
     priority: () => 44,
-    prompt: () => 'Un exemple, en une phrase ?',
-    help: () =>
-      'Ce que vous avez fait, avec quel outil, pour quel résultat. Facultatif.',
-    options: () => [],
-    freeInput: () => ({
-      kind: 'text',
-      minLength: 10,
-      maxLength: 600,
-      labelFr: 'Votre exemple',
-      placeholderFr:
-        'Ex. J’ai construit sous Excel le suivi mensuel des ventes de mon équipe.',
-    }),
+    prompt: () => 'Dans quel contexte avez-vous pratiqué ?',
+    help: () => 'Choisissez le contexte principal. Cette réponse reste une déclaration personnelle.',
+    options: (state) => state.facts.catalog?.practice_context ?? [],
     contextField: null,
   },
 ] satisfies readonly SurveyQuestion[]);

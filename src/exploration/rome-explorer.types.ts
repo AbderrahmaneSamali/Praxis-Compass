@@ -1,5 +1,6 @@
 /** Structured, record-citing reasons: never free prose (CLAUDE.md). */
 export type ExplorationReason =
+  | Readonly<{ kind: 'rome_domain'; domainCode: string; domainLabel: string; releaseId: string }>
   | Readonly<{
       kind: 'rome_mobility';
       /** ROME code the move starts from. */
@@ -90,6 +91,7 @@ export type RomePossibilities = Readonly<{
     mobility: PossibilityGroup;
     interests: PossibilityGroup;
     sharedSkills: PossibilityGroup;
+    domain: PossibilityGroup;
   }>;
   releaseId: string;
 }>;
